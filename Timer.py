@@ -1,3 +1,4 @@
+import time
 from time import perf_counter
 class Timer:
 
@@ -5,11 +6,12 @@ class Timer:
         self.active_time = 0
         self.timer_started = False
         self.last_time = None
+        self.finish = False
 
     def timing_function(self, start_time: int, start: bool, reset: bool):
         # start time in seconds
-
-        if not self.timer_started or reset:
+        time.sleep(0.1)
+        if not self.timer_started and not self.finish or reset:
             self.active_time = float(start_time)
             self.timer_started = False
         if start and self.active_time > 0.0:
@@ -25,3 +27,6 @@ class Timer:
             csec = int(round((self.active_time - mins * 60 - sec) % 1, 2) * 100)
             csec = csec if csec <= 99 else 99
             print(f"{mins}:{sec}:{csec}", end=' ')
+        if self.active_time == 0.0:
+            self.timer_started = False
+            self.finish = True
