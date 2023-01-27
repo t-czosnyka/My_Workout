@@ -35,9 +35,10 @@ class Login:
 
     def validate(self):
         if self.DB.validate(self.login_str.get(), self.password_str.get()):
+            login = self.login_str.get()
             self.login_str.set('')
             self.password_str.set('')
-            self.log_on(self.login_str.get())
+            self.log_on(login)
             self.msg.destroy()
         else:
             self.password_str.set('')

@@ -100,5 +100,7 @@ class DB:
         mycursor = my_db.cursor()
         mycursor.execute(f"SELECT name,time_work,time_rest,num_rounds,delay FROM exercises WHERE user_id = (SELECT user_id FROM users WHERE name='{user_name}')")
         exes = mycursor.fetchall()
+        for exe in exes:
+            exercises[exe[0]] = Exercise(exe[0],exe[1],exe[2],exe[3],exe[4])
         my_db.close()
         return exercises

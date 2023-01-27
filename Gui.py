@@ -50,6 +50,7 @@ class Gui:
         # Show user_name
         self.user_name_text = Label(frame, textvariable=self.user_name_str, font=("Helvetica", 10))
         self.user_name_text.place(x=10, y=10)
+
         #logout button
         self.logout_btn = Button(self.frame, text="Logout", command=self.log_out)
         self.logout_btn.place(x=10, y=35)
@@ -138,7 +139,11 @@ class Gui:
         self.save_btn.place(x=20, y=394)
 
         # select previously saved exercise from drop down menu
-        self.select_exe_menu = OptionMenu(frame, self.select_exe_str, *self.user.exercises.keys(), command=self.select_exe)
+        if len(self.user.exercises)>0:
+            self.select_exe_menu = OptionMenu(frame, self.select_exe_str, *self.user.exercises.keys(), command=self.select_exe)
+        else:
+            self.select_exe_menu = OptionMenu(frame, self.select_exe_str, value='',
+                                              command=self.select_exe)
         self.select_exe_menu.place(x=120, y=392)
 
 
