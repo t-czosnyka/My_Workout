@@ -1,17 +1,19 @@
 from User import User
 from tkinter import *
 from Exercise import Exercise
-from Login import Login
 from DB import DB
 
 
 
 class Gui:
 
-    def __init__(self, root, user: User, DB):
-        self.DB =DB
+    def __init__(self, root, frame, user: User, DB):
+        self.DB = DB
         self.root = root
-        self.root.geometry('500x600')
+        self.frame = frame
+        self.frame.geometry('500x600')
+        # when frame is closed - close hidden root
+        self.frame.protocol("WM_DELETE_WINDOW", self.on_closing)
         self.user = user
 
         #Timer Variables
@@ -23,102 +25,104 @@ class Gui:
         # Entry widget variables:
         self.work_time_min_str = StringVar()
         self.work_time_sec_str = StringVar()
-
         self.break_time_min_str = StringVar()
         self.break_time_sec_str = StringVar()
-
         self.num_rounds_str = StringVar()
         self.exercise_name_str = StringVar()
-
         self.delay_time_sec_str = StringVar()
         self.select_exe_str = StringVar()
+        self.user_name_str = StringVar()
 
         # Initialize tkinter variables
         self.timer_value_str.set("00:00:00")
         self.round_num_int.set(0)
         self.curr_mode_str.set("Ready")
         self.color_str.set("Green")
-
         self.work_time_min_str.set('0')
         self.work_time_sec_str.set('0')
-
         self.break_time_min_str.set('0')
         self.break_time_sec_str.set('0')
-
         self.num_rounds_str.set('0')
-
         self.delay_time_sec_str.set('0')
-
         self.select_exe_str.set('')
+        self.user_name_str.set(f'{self.user.name}')
+
+        # Show user_name
+        self.user_name_text = Label(frame, textvariable=self.user_name_str, font=("Helvetica", 10))
+        self.user_name_text.place(x=10, y=10)
+        #logout button
+        self.logout_btn = Button(self.frame, text="Logout", command=self.log_out)
+        self.logout_btn.place(x=10, y=35)
+
 
         # Create timer widgets
-        self.mode_text = Label(root, textvariable=self.curr_mode_str, font=("Helvetica", 40), fg=self.color_str.get())
+        self.mode_text = Label(frame, textvariable=self.curr_mode_str, font=("Helvetica", 40), fg=self.color_str.get())
         self.mode_text.grid(row=0, column=0, padx=(10, 0), columnspan=4)
-        self.timer_text = Label(root, textvariable=self.timer_value_str, font=("Helvetica", 80), fg=self.color_str.get())
+        self.timer_text = Label(frame, textvariable=self.timer_value_str, font=("Helvetica", 80), fg=self.color_str.get())
         self.timer_text.grid(row=1, column=0, columnspan=3, padx=10)
-        self.round_text = Label(root, textvariable=self.round_num_int, font=("Helvetica", 40), fg=self.color_str.get())
+        self.round_text = Label(frame, textvariable=self.round_num_int, font=("Helvetica", 40), fg=self.color_str.get())
         self.round_text.grid(row=1, column=4, padx=10)
 
-        self.start_btn = Button(root, text="Start", command=self.start_timer, width=20, height=2, state=DISABLED)
+        self.start_btn = Button(frame, text="Start", command=self.start_timer, width=20, height=2, state=DISABLED)
         self.start_btn.grid(row=2, column=0, columnspan=2)
 
-        self.reset_btn = Button(root, text="Reset", command=self.reset_exercise, width=20, height=2)
+        self.reset_btn = Button(frame, text="Reset", command=self.reset_exercise, width=20, height=2)
         self.reset_btn.grid(row=2, column=2, columnspan=2)
 
         #Create workout/exercise widgets
 
-        self.exe_label = Label(root, text="Exercise", font=("Helvetica", 20))
+        self.exe_label = Label(frame, text="Exercise", font=("Helvetica", 20))
         self.exe_label.grid(row=3, column=0, columnspan=2, pady=(10, 0))
 
-        self.workout_label = Label(root, text="Workout", font=("Helvetica", 20))
+        self.workout_label = Label(frame, text="Workout", font=("Helvetica", 20))
         self.workout_label.grid(row=3, column=2, columnspan=2, pady=(10, 0))
 
-        self.exe_name_label = Label(root, text="Exercise name:", font=("Helvetica", 10))
+        self.exe_name_label = Label(frame, text="Exercise name:", font=("Helvetica", 10))
         self.exe_name_label.grid(row=4, column=0, sticky='w', padx=(20, 0))
 
-        self.work_time_label = Label(root, text="Work time:[min][sec]", font=("Helvetica", 10))
+        self.work_time_label = Label(frame, text="Work time:[min][sec]", font=("Helvetica", 10))
         self.work_time_label.grid(row=5, column=0, sticky='w', padx=(20, 0))
 
-        self.break_time_label = Label(root, text="Break time:[min][sec]", font=("Helvetica", 10))
+        self.break_time_label = Label(frame, text="Break time:[min][sec]", font=("Helvetica", 10))
         self.break_time_label.grid(row=6, column=0, sticky='w', padx=(20, 0))
 
-        self.num_rounds_label = Label(root, text="No. of rounds:", font=("Helvetica", 10))
+        self.num_rounds_label = Label(frame, text="No. of rounds:", font=("Helvetica", 10))
         self.num_rounds_label.grid(row=7, column=0, sticky='w', padx=(20, 0))
 
-        self.delay_time_label = Label(root, text="Delay time:[sec]", font=("Helvetica", 10))
+        self.delay_time_label = Label(frame, text="Delay time:[sec]", font=("Helvetica", 10))
         self.delay_time_label.grid(row=8, column=0, sticky='w', padx=(20, 0))
 
-        reg = root.register(self.is_val_dig)
-        reg2 = root.register(self.is_val_str)
+        reg = frame.register(self.is_val_dig)
+        reg2 = frame.register(self.is_val_str)
 
-        self.exercise_name = Entry(root, width=15, validate="key", validatecommand=(reg2, '%P'),
-                                    textvariable=self.exercise_name_str)
+        self.exercise_name = Entry(frame, width=15, validate="key", validatecommand=(reg2, '%P'),
+                                   textvariable=self.exercise_name_str)
 
         self.exercise_name.place(x=150, y=283)
 
         self.exercise_name_str.trace_add("write", self.exe_name)
 
-        self.work_time_min = Entry(root, validate="key", validatecommand=(reg, '%P'), width=5,
-                              textvariable=self.work_time_min_str)
+        self.work_time_min = Entry(frame, validate="key", validatecommand=(reg, '%P'), width=5,
+                                   textvariable=self.work_time_min_str)
         self.work_time_min.place(x=150, y=305)
 
-        self.work_time_sec = Entry(root, validate="key", validatecommand=(reg, '%P'), width=5,
-                              textvariable=self.work_time_sec_str)
+        self.work_time_sec = Entry(frame, validate="key", validatecommand=(reg, '%P'), width=5,
+                                   textvariable=self.work_time_sec_str)
         self.work_time_sec.place(x=210, y=305)
 
-        self.break_time_min = Entry(root, validate="key", validatecommand=(reg, '%P'), width=5,
-                               textvariable=self.break_time_min_str)
+        self.break_time_min = Entry(frame, validate="key", validatecommand=(reg, '%P'), width=5,
+                                    textvariable=self.break_time_min_str)
         self.break_time_min.place(x=150, y=327)
 
-        self.break_time_sec = Entry(root, validate="key", validatecommand=(reg, '%P'), width=5,
-                               textvariable=self.break_time_sec_str)
+        self.break_time_sec = Entry(frame, validate="key", validatecommand=(reg, '%P'), width=5,
+                                    textvariable=self.break_time_sec_str)
         self.break_time_sec.place(x=210, y=327)
 
-        self.num_rounds = Entry(root, validate="key", validatecommand=(reg, '%P'), width=5, textvariable=self.num_rounds_str)
+        self.num_rounds = Entry(frame, validate="key", validatecommand=(reg, '%P'), width=5, textvariable=self.num_rounds_str)
         self.num_rounds.place(x=150, y=349)
 
-        self.delay_time_sec = Entry(root, validate="key", validatecommand=(reg, '%P'), width=5,
-                               textvariable=self.delay_time_sec_str)
+        self.delay_time_sec = Entry(frame, validate="key", validatecommand=(reg, '%P'), width=5,
+                                    textvariable=self.delay_time_sec_str)
         self.delay_time_sec.place(x=150, y=371)
 
         # trace changes in entry widgets
@@ -130,16 +134,13 @@ class Gui:
         self.delay_time_sec_str.trace_add("write", self.value_changed)
 
         # save button
-        self.save_btn = Button(root, text="Save Exercise", command=self.save_exercise, state=DISABLED)
+        self.save_btn = Button(frame, text="Save Exercise", command=self.save_exercise, state=DISABLED)
         self.save_btn.place(x=20, y=394)
 
         # select previously saved exercise from drop down menu
-        self.select_exe_menu = OptionMenu(root, self.select_exe_str, *self.user.exercises.keys(), command=self.select_exe)
+        self.select_exe_menu = OptionMenu(frame, self.select_exe_str, *self.user.exercises.keys(), command=self.select_exe)
         self.select_exe_menu.place(x=120, y=392)
 
-        #logout button
-        self.logout_btn = Button(self.root, text="Logout", command=self.log_out)
-        self.logout_btn.place(x=120, y=420)
 
     def start_timer(self):
         self.user.running = True
@@ -192,6 +193,11 @@ class Gui:
         # save entry widget values into Exercise object
         name = self.exercise_name_str.get()
         inputs = self.get_inputs()
+        #Save data to DB
+        if not self.DB.save_exercise(self.user.name, name, *inputs):
+            #if not saved to DB cancel and show error
+            return
+        #Create or update Exercise object
         if name in self.user.exercises:
             self.user.exercises[name].worktime = inputs[0]
             self.user.exercises[name].breaktime = inputs[1]
@@ -199,6 +205,7 @@ class Gui:
             self.user.exercises[name].delay = inputs[3]
         else:
             self.user.exercises[name] = Exercise(name, *inputs)
+
         self.update_option_menu()
 
     def is_val_dig(self, input):  # validating function for entry widgets, max two digits allowed
@@ -224,7 +231,7 @@ class Gui:
 
         # after adding new exercise recreate OptionMenu widget with new options
         self.select_exe_menu.destroy()
-        self.select_exe_menu = OptionMenu(self.root, self.select_exe_str, *self.user.exercises.keys(),
+        self.select_exe_menu = OptionMenu(self.frame, self.select_exe_str, *self.user.exercises.keys(),
                                           command=self.select_exe)
         self.select_exe_menu.place(x=120, y=392)
 
@@ -257,14 +264,16 @@ class Gui:
             self.mode_text.configure(fg="green")
             self.round_text.configure(fg="green")
             self.timer_text.configure(fg="green")
-        self.root.after(100, self.update)
+        self.frame.after(100, self.update)
 
     def log_out(self):
-        #logout by hiding main window, calling login window top
-        self.root.withdraw()
-        top = Toplevel()
-        Login(top, self.root, self.DB)
+        #logout by unhide main window, close frame
+        self.frame.destroy()
+        self.root.deiconify()
 
+    def on_closing(self):
+        #close root if frame is closed
+        self.root.destroy()
 
 
 

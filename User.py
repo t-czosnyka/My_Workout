@@ -3,13 +3,11 @@ from Exercise import Exercise
 from Timer import Timer
 class User:
 
-    def __init__(self, name: str, email: str, password: str, admin: bool):
+    def __init__(self, name: str, admin: bool, exercises):
         self.name = name
-        self.email = email
-        self.password = password
         self.admin = admin
-        self.exercises = {}
-        self.exercises['test']=Exercise('test',0,0,0,0)
+        self.exercises = exercises
+        #self.exercises['test']=Exercise('test',0,0,0,0)
         self.workouts = []
         self.queue = []
         self.my_timer = Timer()
