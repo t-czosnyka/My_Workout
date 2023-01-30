@@ -32,6 +32,7 @@ class Gui:
         self.delay_time_sec_str = StringVar()
         self.select_exe_str = StringVar()
         self.user_name_str = StringVar()
+        self.exe_msg_str = StringVar()
 
         # Initialize tkinter variables
         self.timer_value_str.set("00:00:00")
@@ -46,6 +47,7 @@ class Gui:
         self.delay_time_sec_str.set('0')
         self.select_exe_str.set('')
         self.user_name_str.set(f'{self.user.name}')
+        self.exe_msg_str.set('')
 
         # Show user_name
         self.user_name_text = Label(frame, textvariable=self.user_name_str, font=("Helvetica", 10))
@@ -138,10 +140,20 @@ class Gui:
         self.save_btn = Button(frame, text="Save Exercise", command=self.save_exercise, state=DISABLED)
         self.save_btn.place(x=20, y=394)
 
+        #status message label
+        self.exe_msg = Label(self.frame, textvariable=self.exe_msg_str, wraplength=300)
+        self.exe_msg.place(x=20,y=420)
+
         # select previously saved exercise from drop down menu
+        # if there are exercises available update menu options
         if len(self.user.exercises)>0:
             self.select_exe_menu = OptionMenu(frame, self.select_exe_str, *self.user.exercises.keys(), command=self.select_exe)
+            #select first exercises
+            key = list(self.user.exercises.keys())[0]
+            self.select_exe_str.set(key)
+            self.select_exe(key)
         else:
+            #if no exercises are available write empty value to menu options
             self.select_exe_menu = OptionMenu(frame, self.select_exe_str, value='',
                                               command=self.select_exe)
         self.select_exe_menu.place(x=120, y=392)
@@ -158,7 +170,7 @@ class Gui:
     def reset_exercise(self):
         self.pause_timer()
         self.user.reset_exe()
-        self.load_exercise()
+        self.update_curr_exercise()
 
     def get_str_var(self, str_var):
         # return int of stringvar or 0 if empty
@@ -175,7 +187,7 @@ class Gui:
         delay = self.get_str_var(self.delay_time_sec_str)
         return [work_time, break_time, num_rounds, delay]
 
-    def load_exercise(self):
+    def update_curr_exercise(self):
         # load values from entry widgets to current exercise
         if not self.user.curr_exe.started and not self.user.curr_exe.finished:
             inputs = self.get_inputs()
@@ -191,18 +203,20 @@ class Gui:
 
     def value_changed(self, var, index, mode):
         # check values when entry widgest are changed
-        self.load_exercise()
+        self.update_curr_exercise()
 
     def save_exercise(self):
         # save button function
-        # save entry widget values into Exercise object
+        # save entry widget values into Exercise object and database
         name = self.exercise_name_str.get()
         inputs = self.get_inputs()
-        #Save data to DB
-        if not self.DB.save_exercise(self.user.name, name, *inputs):
-            #if not saved to DB cancel and show error
+        # Save data to DB, in case of error return
+        res, error = self.DB.save_exercise(self.user.name, name, *inputs)
+        if not res:
+            # Display message
+            self.exe_msg_str.set(error)
             return
-        #Create or update Exercise object
+        # Create or update Exercise object if DB operation was susccesful
         if name in self.user.exercises:
             self.user.exercises[name].worktime = inputs[0]
             self.user.exercises[name].breaktime = inputs[1]
@@ -210,8 +224,11 @@ class Gui:
             self.user.exercises[name].delay = inputs[3]
         else:
             self.user.exercises[name] = Exercise(name, *inputs)
-
+        #Update options in menu and select saved exercise
         self.update_option_menu()
+        self.select_exe_str.set(name)
+        #Display message
+        self.exe_msg_str.set('Exercise saved.')
 
     def is_val_dig(self, input):  # validating function for entry widgets, max two digits allowed
         if (input.isdigit() or input == '') and len(input) <= 2:

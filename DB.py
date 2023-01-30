@@ -23,13 +23,14 @@ class DB:
             database="my_workout_db"
         )
         mycursor = my_db.cursor()
-
+        # Create tables if they dont exist
         mycursor.execute("CREATE TABLE IF NOT EXISTS users (user_id INT AUTO_INCREMENT PRIMARY KEY,\
-                           name VARCHAR(40), email VARCHAR(40), password VARCHAR(40))")
+                           name VARCHAR(40), email VARCHAR(40), password VARCHAR(40),\
+                         UNIQUE(name))")
 
         mycursor.execute("CREATE TABLE IF NOT EXISTS exercises (exe_id INT AUTO_INCREMENT PRIMARY KEY, user_id INT,\
                           name VARCHAR(40), time_work INT, time_rest INT, num_rounds INT, delay INT,\
-                          FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE)")
+                          UNIQUE(user_id,name), FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE)")
 
         mycursor.execute("CREATE TABLE IF NOT EXISTS work_users (work_id INT AUTO_INCREMENT PRIMARY KEY, user_id INT,\
                           name  VARCHAR(40),\
@@ -39,7 +40,16 @@ class DB:
                          FOREIGN KEY (work_id) REFERENCES work_users(work_id) ON DELETE CASCADE,\
                          FOREIGN KEY (exe_id) REFERENCES exercises(exe_id) ON DELETE CASCADE,\
                          PRIMARY KEY(work_id, exe_id, order_num))")
+        # Create test user if doesnt exist
+        mycursor.execute("INSERT INTO users (name, email, password) VALUES('test','test@test.com','t1234')\
+                         ON DUPLICATE KEY UPDATE user_id = user_id")
 
+        # Create test exercise if doesnt exist
+        mycursor.execute("INSERT INTO exercises (user_id, name, time_work, time_rest, num_rounds, delay)\
+                         VALUES((SELECT user_id FROM users WHERE name = 'test'),'test_exe',60,20,3,10)\
+                         ON DUPLICATE KEY UPDATE exe_id = exe_id")
+
+        my_db.commit()
         my_db.close()
 
     def validate(self, in_login, in_password):
@@ -75,18 +85,29 @@ class DB:
         return user
 
     def save_exercise(self, user_name, exe_name, worktime, breaktime, num_rounds, delay):
+        error = ''
         my_db = mysql.connector.connect(
             host="localhost",
             user="root",
             passwd="Batman123",
             database="my_workout_db"
         )
+        result = False
         mycursor = my_db.cursor()
-        mycursor.execute(f"INSERT INTO exercises ('user_id', 'name','time_work','time_rest','num_rounds','delay') VALUES((SELECT user_id FROM users WHERE name='{user_name}'),\
-                         '{exe_name}',{worktime},{breaktime},{num_rounds},{delay}")
-        result = mycursor.fetchall()
-        print(result)
+        try:
+            mycursor.execute(f"INSERT INTO exercises (user_id, name,time_work,time_rest,num_rounds,delay) \
+                             VALUES((SELECT user_id FROM users WHERE name='{user_name}'),\
+                             '{exe_name}',{worktime},{breaktime},{num_rounds},{delay})\
+                             ON DUPLICATE KEY UPDATE time_work={worktime},time_rest={breaktime},\
+                             num_rounds={num_rounds},delay={delay}")
+        except mysql.connector.Error as err:
+            error = err
+        else:
+            #No error
+            result = True
+        my_db.commit()
         my_db.close()
+        return result, error
 
     def get_exercises(self,user_name):
         # Get exercises data from DB for user
