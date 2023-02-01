@@ -57,6 +57,9 @@ class Gui:
         self.logout_btn = Button(self.frame, text="Logout", command=self.log_out)
         self.logout_btn.place(x=10, y=35)
 
+        self.delete_user_btn = Button(self.frame, text="Delete User", command=self.log_out)
+        self.delete_user_btn.place(x=20, y=35)
+
 
         # Create timer widgets
         self.mode_text = Label(frame, textvariable=self.curr_mode_str, font=("Helvetica", 40), fg=self.color_str.get())
@@ -136,32 +139,27 @@ class Gui:
         self.num_rounds_str.trace_add("write", self.value_changed)
         self.delay_time_sec_str.trace_add("write", self.value_changed)
 
-        # save button
-        self.save_btn = Button(frame, text="Save Exercise", command=self.save_exercise, state=DISABLED)
+        # save exercise button
+        self.save_btn = Button(frame, text="Save Exercise", command=self.save_exercise, state=DISABLED, width=12)
         self.save_btn.place(x=20, y=394)
+
+        # delete exercise button
+        self.delete_btn = Button(frame, text="Delete Exercise", command=self.delete_exercise, width=12)
+        self.delete_btn.place(x=20,y=430)
 
         #status message label
         self.exe_msg = Label(self.frame, textvariable=self.exe_msg_str, wraplength=300)
-        self.exe_msg.place(x=20,y=420)
+        self.exe_msg.place(x=20,y=460)
 
-        # select previously saved exercise from drop down menu
-        # if there are exercises available update menu options
-        if len(self.user.exercises)>0:
-            self.select_exe_menu = OptionMenu(frame, self.select_exe_str, *self.user.exercises.keys(), command=self.select_exe)
-            #select first exercises
-            key = list(self.user.exercises.keys())[0]
-            self.select_exe_str.set(key)
-            self.select_exe(key)
-        else:
-            #if no exercises are available write empty value to menu options
-            self.select_exe_menu = OptionMenu(frame, self.select_exe_str, value='',
-                                              command=self.select_exe)
-        self.select_exe_menu.place(x=120, y=392)
+        #create option menu based on user exercises
+        self.create_option_menu()
 
 
     def start_timer(self):
         self.user.running = True
         self.start_btn.configure(text="Pause", command=self.pause_timer)
+        #Clear message
+        self.exe_msg_str.set('')
 
     def pause_timer(self):
         self.user.running = False
@@ -171,6 +169,8 @@ class Gui:
         self.pause_timer()
         self.user.reset_exe()
         self.update_curr_exercise()
+        #Clear message
+        self.exe_msg_str.set('')
 
     def get_str_var(self, str_var):
         # return int of stringvar or 0 if empty
@@ -205,30 +205,7 @@ class Gui:
         # check values when entry widgest are changed
         self.update_curr_exercise()
 
-    def save_exercise(self):
-        # save button function
-        # save entry widget values into Exercise object and database
-        name = self.exercise_name_str.get()
-        inputs = self.get_inputs()
-        # Save data to DB, in case of error return
-        res, error = self.DB.save_exercise(self.user.name, name, *inputs)
-        if not res:
-            # Display message
-            self.exe_msg_str.set(error)
-            return
-        # Create or update Exercise object if DB operation was susccesful
-        if name in self.user.exercises:
-            self.user.exercises[name].worktime = inputs[0]
-            self.user.exercises[name].breaktime = inputs[1]
-            self.user.exercises[name].num_rounds = inputs[2]
-            self.user.exercises[name].delay = inputs[3]
-        else:
-            self.user.exercises[name] = Exercise(name, *inputs)
-        #Update options in menu and select saved exercise
-        self.update_option_menu()
-        self.select_exe_str.set(name)
-        #Display message
-        self.exe_msg_str.set('Exercise saved.')
+
 
     def is_val_dig(self, input):  # validating function for entry widgets, max two digits allowed
         if (input.isdigit() or input == '') and len(input) <= 2:
@@ -250,14 +227,30 @@ class Gui:
             self.save_btn.configure(state=DISABLED)
 
     def update_option_menu(self):
-
-        # after adding new exercise recreate OptionMenu widget with new options
+        # delete than recreate option menu
         self.select_exe_menu.destroy()
-        self.select_exe_menu = OptionMenu(self.frame, self.select_exe_str, *self.user.exercises.keys(),
-                                          command=self.select_exe)
-        self.select_exe_menu.place(x=120, y=392)
+        self.create_option_menu()
 
-    def select_exe(self,selected):
+
+    def create_option_menu(self):
+        # create option menu with exercises of current user
+        if len(self.user.exercises)>0:
+            self.select_exe_menu = OptionMenu(self.frame, self.select_exe_str, *self.user.exercises.keys(),
+                                              command=self.select_exercise)
+            # if no exercise selected, select first one
+            if self.select_exe_str.get() == '':
+                key = list(self.user.exercises.keys())[0]
+                self.select_exe_str.set(key)
+                self.select_exercise(key)
+        else:
+            # if no exercises are available write empty value to menu options
+            self.select_exe_menu = OptionMenu(self.frame, self.select_exe_str, value='',
+                                              command=self.select_exercise)
+            self.select_exe_str.set('')
+            self.exercise_name_str.set('')
+        self.select_exe_menu.place(x=120, y=391)
+
+    def select_exercise(self, selected):
         # insert selected values into entry widgets
         if selected in self.user.exercises:
             self.exercise_name_str.set(self.user.exercises[selected].name)
@@ -269,12 +262,13 @@ class Gui:
             self.delay_time_sec_str.set(str(self.user.exercises[selected].delay))
 
     def update(self):
-        #continous update function
+        # continous update function
+        # check timer
         self.user.run_exe()
         if self.user.curr_exe.finished:
             self.pause_timer()
             self.user.reset_exe()
-
+        # update timer values and colors
         self.timer_value_str.set(self.user.my_timer.time_str)
         self.round_num_int.set(self.user.curr_round)
         self.curr_mode_str.set(self.user.mode)
@@ -286,6 +280,7 @@ class Gui:
             self.mode_text.configure(fg="green")
             self.round_text.configure(fg="green")
             self.timer_text.configure(fg="green")
+        # recall again every 0.1s
         self.frame.after(100, self.update)
 
     def log_out(self):
@@ -297,6 +292,49 @@ class Gui:
         #close root if frame is closed
         self.root.destroy()
 
+    def save_exercise(self):
+        # save button function
+        # save entry widget values into Exercise object and database
+        name = self.exercise_name_str.get()
+        inputs = self.get_inputs()
+        # Save data to DB, in case of error return
+        res, error = self.DB.save_exercise(self.user.name, name, *inputs)
+        if not res:
+            # Display message
+            self.exe_msg_str.set(error)
+            return
+        # Create or update Exercise object if DB operation was susccesful
+        if name in self.user.exercises:
+            self.user.exercises[name].worktime = inputs[0]
+            self.user.exercises[name].breaktime = inputs[1]
+            self.user.exercises[name].num_rounds = inputs[2]
+            self.user.exercises[name].delay = inputs[3]
+        else:
+            self.user.exercises[name] = Exercise(name, *inputs)
+        # Update options in menu and select saved exercise
+        self.update_option_menu()
+        self.select_exe_str.set(name)
+        # Display message
+        self.exe_msg_str.set('Exercise saved.')
+
+    def delete_exercise(self):
+        # delete currently selected exercise from user class and DB
+        # exercise name from entry widget:
+        exe_name = self.exercise_name_str.get()
+        # delete from DB
+        res, error = self.DB.delete_exercise(self.user.name,exe_name)
+        # check if successfully deleted from DB
+        if not res:
+            # Display message
+            self.exe_msg_str.set(error)
+            return
+        # delete cirrent name from select menu
+        self.select_exe_str.set('')
+        if exe_name in self.user.exercises:
+            self.user.exercises.pop(exe_name)
+        self.update_option_menu()
+        #Display message
+        self.exe_msg_str.set('Exercise deleted.')
 
 
 

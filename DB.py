@@ -2,26 +2,30 @@ import mysql.connector
 from User import User
 from Exercise import Exercise
 class DB:
-
+    # DB class handles database operations using mysql connector
     def __init__(self):
-        my_db = mysql.connector.connect(
-            host="localhost",
-            user="root",
-            passwd="Batman123"
-        )
+        self.error = False
+        self.error_msg = ''
+        try:
+            my_db = mysql.connector.connect(
+                host="localhost",
+                user="root",
+                passwd="Batman123"
+            )
+        except mysql.connector.Error as err:
+            self.error = True
+            self.error_msg = err
+            return
 
         mycursor = my_db.cursor()
         mycursor.execute("CREATE DATABASE IF NOT EXISTS my_workout_db;")
-
         # Disconnecting from the server
         my_db.close()
+        my_db = self.connect_to_DB()
+        # end function if error happens during connection
+        if not my_db:
+            return
 
-        my_db = mysql.connector.connect(
-            host="localhost",
-            user="root",
-            passwd="Batman123",
-            database="my_workout_db"
-        )
         mycursor = my_db.cursor()
         # Create tables if they dont exist
         mycursor.execute("CREATE TABLE IF NOT EXISTS users (user_id INT AUTO_INCREMENT PRIMARY KEY,\
@@ -48,19 +52,32 @@ class DB:
         mycursor.execute("INSERT INTO exercises (user_id, name, time_work, time_rest, num_rounds, delay)\
                          VALUES((SELECT user_id FROM users WHERE name = 'test'),'test_exe',60,20,3,10)\
                          ON DUPLICATE KEY UPDATE exe_id = exe_id")
-
         my_db.commit()
         my_db.close()
+
+    def connect_to_DB(self):
+        # connecting to the database, return connection object if succesful, return None if error
+        try:
+            my_db = mysql.connector.connect(
+                host="localhost",
+                user="root",
+                passwd="Batman123",
+                database="my_workout_db"
+            )
+        except mysql.connector.Error as err:
+            self.error = True
+            self.error_msg = err
+            return None
+        else:
+            return my_db
 
     def validate(self, in_login, in_password):
         valid = False
         login_found = False
-        my_db = mysql.connector.connect(
-            host="localhost",
-            user="root",
-            passwd="Batman123",
-            database="my_workout_db"
-        )
+        my_db = self.connect_to_DB()
+        if not my_db:
+            return
+
         mycursor = my_db.cursor()
         # get logins from DB
         mycursor.execute("SELECT name FROM users")
@@ -86,12 +103,9 @@ class DB:
 
     def save_exercise(self, user_name, exe_name, worktime, breaktime, num_rounds, delay):
         error = ''
-        my_db = mysql.connector.connect(
-            host="localhost",
-            user="root",
-            passwd="Batman123",
-            database="my_workout_db"
-        )
+        my_db = self.connect_to_DB()
+        if not my_db:
+            return False, error
         result = False
         mycursor = my_db.cursor()
         try:
@@ -112,12 +126,9 @@ class DB:
     def get_exercises(self,user_name):
         # Get exercises data from DB for user
         exercises ={}
-        my_db = mysql.connector.connect(
-            host="localhost",
-            user="root",
-            passwd="Batman123",
-            database="my_workout_db"
-        )
+        my_db = self.connect_to_DB()
+        if not my_db:
+            return exercises
         mycursor = my_db.cursor()
         mycursor.execute(f"SELECT name,time_work,time_rest,num_rounds,delay FROM exercises WHERE user_id = (SELECT user_id FROM users WHERE name='{user_name}')")
         exes = mycursor.fetchall()
@@ -125,3 +136,27 @@ class DB:
             exercises[exe[0]] = Exercise(exe[0],exe[1],exe[2],exe[3],exe[4])
         my_db.close()
         return exercises
+
+    def delete_exercise(self,user_name,exe_name):
+        # delete exercise from DB
+        error = ''
+        my_db = self.connect_to_DB()
+        if not my_db:
+            return False, error
+        mycursor = my_db.cursor()
+        res = False
+        mycursor.execute(f"SELECT * FROM exercises \
+                         WHERE user_id = (SELECT user_id FROM users WHERE name='{user_name}') AND name='{exe_name}'")
+        exe = mycursor.fetchall()
+        if len(exe) == 0:
+            return False, 'Exercise not found.'
+        try:
+            mycursor.execute(f"DELETE FROM exercises  \
+                             WHERE user_id = (SELECT user_id FROM users WHERE name='{user_name}') AND name='{exe_name}'")
+            my_db.commit()
+        except mysql.connector.Error as err:
+            error = err
+        else:
+            res = True
+        my_db.close()
+        return res, error
