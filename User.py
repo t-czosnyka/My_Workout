@@ -7,7 +7,7 @@ class User:
         self.admin = admin
         self.exercises = exercises
         #self.exercises['test']=Exercise('test',0,0,0,0)
-        self.workouts = []
+        self.workouts = {}
         self.queue = []
         self.my_timer = Timer()
         self.delay_done = False

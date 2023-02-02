@@ -1,6 +1,7 @@
 from User import User
 from tkinter import *
 from Exercise import Exercise
+from tkinter import messagebox as mb
 from DB import DB
 
 
@@ -33,6 +34,7 @@ class Gui:
         self.select_exe_str = StringVar()
         self.user_name_str = StringVar()
         self.exe_msg_str = StringVar()
+        self.select_work_str = StringVar()
 
         # Initialize tkinter variables
         self.timer_value_str.set("00:00:00")
@@ -48,6 +50,7 @@ class Gui:
         self.select_exe_str.set('')
         self.user_name_str.set(f'{self.user.name}')
         self.exe_msg_str.set('')
+        self.select_work_str.set('')
 
         # Show user_name
         self.user_name_text = Label(frame, textvariable=self.user_name_str, font=("Helvetica", 10))
@@ -57,8 +60,9 @@ class Gui:
         self.logout_btn = Button(self.frame, text="Logout", command=self.log_out)
         self.logout_btn.place(x=10, y=35)
 
-        self.delete_user_btn = Button(self.frame, text="Delete User", command=self.log_out)
-        self.delete_user_btn.place(x=20, y=35)
+        # Delete user button
+        self.delete_user_btn = Button(self.frame, text="Delete User", command=self.ask_delete_user)
+        self.delete_user_btn.place(x=65, y=35)
 
 
         # Create timer widgets
@@ -152,7 +156,10 @@ class Gui:
         self.exe_msg.place(x=20,y=460)
 
         #create option menu based on user exercises
-        self.create_option_menu()
+        self.create_exercise_menu()
+
+        # create option menu based on user workouts
+        self.create_workout_menu()
 
 
     def start_timer(self):
@@ -226,13 +233,13 @@ class Gui:
         else:
             self.save_btn.configure(state=DISABLED)
 
-    def update_option_menu(self):
+    def update_exercise_menu(self):
         # delete than recreate option menu
         self.select_exe_menu.destroy()
-        self.create_option_menu()
+        self.create_exercise_menu()
 
 
-    def create_option_menu(self):
+    def create_exercise_menu(self):
         # create option menu with exercises of current user
         if len(self.user.exercises)>0:
             self.select_exe_menu = OptionMenu(self.frame, self.select_exe_str, *self.user.exercises.keys(),
@@ -250,6 +257,18 @@ class Gui:
             self.exercise_name_str.set('')
         self.select_exe_menu.place(x=120, y=391)
 
+    def create_workout_menu(self):
+        #create option menu with workouts of current user
+        if len(self.user.workouts) > 0:
+            self.select_workout_menu = OptionMenu(self.frame, self.select_work_str, *self.user.workouts.keys(),
+                                                  command=self.select_workout)
+        else:
+            # if no workouts are available write empty value to menu options
+            self.select_workout_menu = OptionMenu(self.frame, self.select_work_str, value='',
+                                                  command=self.select_workout)
+        self.select_workout_menu.place(x=300, y=391)
+
+
     def select_exercise(self, selected):
         # insert selected values into entry widgets
         if selected in self.user.exercises:
@@ -261,6 +280,8 @@ class Gui:
             self.num_rounds_str.set(str(self.user.exercises[selected].num_rounds))
             self.delay_time_sec_str.set(str(self.user.exercises[selected].delay))
 
+    def select_workout(self,selected):
+        pass
     def update(self):
         # continous update function
         # check timer
@@ -312,7 +333,7 @@ class Gui:
         else:
             self.user.exercises[name] = Exercise(name, *inputs)
         # Update options in menu and select saved exercise
-        self.update_option_menu()
+        self.update_exercise_menu()
         self.select_exe_str.set(name)
         # Display message
         self.exe_msg_str.set('Exercise saved.')
@@ -332,10 +353,24 @@ class Gui:
         self.select_exe_str.set('')
         if exe_name in self.user.exercises:
             self.user.exercises.pop(exe_name)
-        self.update_option_menu()
+        self.update_exercise_menu()
         #Display message
         self.exe_msg_str.set('Exercise deleted.')
 
+    def ask_delete_user(self):
+        res = mb.askquestion('Delete User', 'Do you really want to delete user')
+        if res == 'yes':
+            self.delete_user()
+        else:
+            return
 
 
+    def delete_user(self):
+        user_name = self.user.name
+        res, error = self.DB.delete_user(user_name)
+        if not res:
+            mb.showinfo('Return', 'Operation failed.')
+            return
+        self.log_out()
+        mb.showinfo('OK', 'User deleted.')
 

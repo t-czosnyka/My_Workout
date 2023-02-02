@@ -160,3 +160,28 @@ class DB:
             res = True
         my_db.close()
         return res, error
+
+    def delete_user(self, user_name):
+        # delete current user
+        error = ''
+        my_db = self.connect_to_DB()
+        if not my_db:
+            return False, error
+        mycursor = my_db.cursor()
+        res = False
+        mycursor.execute(f"SELECT * FROM users \
+                         WHERE name = '{user_name}'")
+        user = mycursor.fetchall()
+        # return if no user with this name found
+        if len(user) == 0:
+            return False, 'User not found.'
+        try:
+            mycursor.execute(f"DELETE FROM users  \
+                             WHERE name = '{user_name}'")
+            my_db.commit()
+        except mysql.connector.Error as err:
+            error = err
+        else:
+            res = True
+        my_db.close()
+        return res,error

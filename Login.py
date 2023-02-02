@@ -32,7 +32,7 @@ class Login:
         self.login_btn = Button(self.root, text="Login", command=self.validate)
         self.login_btn.place(x=100, y=60)
         #Status Msg Label
-        self.msg = Label(self.root, textvariable=self.msg_str,fg='Red')
+        self.msg = Label(self.root, textvariable=self.msg_str, fg='Red')
         self.msg.place(x=50, y=87)
         #if DB not connected properly display msg and block login button
         if self.DB.error:
@@ -46,7 +46,6 @@ class Login:
             self.login_str.set('')
             self.password_str.set('')
             self.log_on(login)
-            self.msg.destroy()
             self.msg_str.set('')
         else:
             self.password_str.set('')
@@ -55,8 +54,8 @@ class Login:
 
 
     def log_on(self, login):
-        #Create User and Gui objects with data from DB on succesful login
-        #Hide login screen
+        # Create User and Gui objects with data from DB on succesful login
+        # Hide login screen
         self.root.withdraw()
         frame = Toplevel()
         user = self.DB.get_user(login)
