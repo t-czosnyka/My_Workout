@@ -7,8 +7,6 @@ class Exercise:
         self.breaktime = breaktime
         self.num_rounds = num_rounds
         self.delay = delay
-        self.started = False
-        self.finished = False
 
     def __str__(self):
         return self.name + f" :worktime:{self.worktime}, breaktime:{self.breaktime}, rounds:{self.num_rounds}, delay:{self.delay}"

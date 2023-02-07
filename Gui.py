@@ -7,7 +7,6 @@ from tkinter import messagebox as mb
 from DB import DB
 
 
-
 class Gui:
 
     def __init__(self, root, frame, user: User, DB):
@@ -19,7 +18,7 @@ class Gui:
         self.frame.protocol("WM_DELETE_WINDOW", self.on_closing)
         self.user = user
 
-        #Timer Variables
+        # Timer Variables
         self.curr_mode_str = StringVar()
         self.timer_value_str = StringVar()
         self.round_num_int = IntVar()
@@ -68,7 +67,6 @@ class Gui:
         self.delete_user_btn = Button(self.frame, text="Delete User", command=self.ask_delete_user)
         self.delete_user_btn.place(x=65, y=35)
 
-
         # Create timer widgets
         self.mode_text = Label(self.frame, textvariable=self.curr_mode_str, font=("Helvetica", 40), fg=self.color_str.get())
         self.mode_text.grid(row=0, column=0, padx=(10, 0), columnspan=4)
@@ -84,7 +82,7 @@ class Gui:
         self.reset_btn.grid(row=2, column=2, columnspan=2)
 
         ### Exercises ###
-        #Create workout/exercise widgets
+        # Create workout/exercise widgets
 
         self.exe_label = Label(self.frame, text="Exercise", font=("Helvetica", 20))
         self.exe_label.grid(row=3, column=0, columnspan=2, pady=(10, 0))
@@ -174,52 +172,66 @@ class Gui:
         self.start_work_btn.place(x=300, y=400)
 
         # create list with current workout
-        self.curr_workout_list = Listbox(self.frame, height=5)
+        self.curr_workout_list = Listbox(self.frame, height=5, selectmode=SINGLE)
         self.curr_workout_list.place(x=300, y=312)
 
         # create option menu based on user workouts
         self.create_workout_menu()
 
-    def update(self):
+    def cont_update(self):
         # continuous update function
-        # run exercise
+        # run exercise timer
         self.user.run_exe()
         # run workout
         self.user.run_workout()
-        # single exercise finished
-        if self.user.curr_exe.finished and not self.user.curr_workout.started:
-            self.user.reset_exe()
-            self.pause_timer()
-        # Exercise in workout mode finished
-        if self.user.curr_workout.started and self.user.curr_workout.exercise_finished:
-            self.select_exercise(self.user.curr_exe.name)
-            self.user.start_run()
-            self.user.curr_workout.reset_exe_finished()
+        if self.user.curr_exe_finished:
+            # single exercise finished
+            if not self.user.curr_workout_started:
+                self.user.reset_exe()
+                self.pause_timer()
+            # Exercise finished in workout mode
+            else:
+                # Reset and start next exercise
+                self.select_exercise(self.user.curr_exe.name)
+                self.user.reset_exe()
+                if self.user.curr_workout_finished:
+                    self.user.curr_workout_started = False
+                    self.user.curr_workout_finished = False
+                    self.pause_timer()
+                    self.select_workout(self.user.curr_workout.name)
+                else:
+                    self.user.start_run()
+
         # update timer values and colors
         self.timer_value_str.set(self.user.my_timer.time_str)
-        self.round_num_int.set(self.user.curr_round)
-        self.curr_mode_str.set(self.user.mode)
-        if self.user.mode == 'Delay' or self.user.mode == 'Break':
+        self.round_num_int.set(self.user.curr_exe_round)
+        self.curr_mode_str.set(self.user.curr_exe_mode)
+        self.curr_exe_text_str.set(self.user.curr_exe.name)
+        if self.user.curr_exe_mode == 'Delay' or self.user.curr_exe_mode == 'Break':
             self.mode_text.configure(fg="red")
             self.round_text.configure(fg="red")
             self.timer_text.configure(fg="red")
+            self.curr_exe_text.configure(fg="red")
         else:
             self.mode_text.configure(fg="green")
             self.round_text.configure(fg="green")
             self.timer_text.configure(fg="green")
+            self.curr_exe_text.configure(fg="green")
 
         # Disable/Enable widgets when workout is running
-        if self.user.curr_workout.started:
+        if self.user.curr_workout_started:
             self.start_work_btn.configure(text="Workout Started",state=DISABLED)
             self.select_workout_menu.configure(state=DISABLED)
             self.select_exe_menu.configure(state=DISABLED)
+            self.curr_workout_list.configure(state=DISABLED)
         else:
             self.start_work_btn.configure(text="Start Workout",state=NORMAL)
             self.select_workout_menu.configure(state=NORMAL)
             self.select_exe_menu.configure(state=NORMAL)
+            self.curr_workout_list.configure(state=NORMAL)
 
         # recall again every 0.1s
-        self.frame.after(100, self.update)
+        self.frame.after(100, self.cont_update)
 
     def start_timer(self):
         self.user.start_run()
@@ -242,7 +254,7 @@ class Gui:
     def reset_exercise(self):
         self.pause_timer()
         self.user.reset_exe()
-        self.user.curr_workout.finish_workout()
+        self.user.reset_workout()
         self.select_workout(self.user.curr_workout.name)
         self.update_curr_exercise()
         # Clear message
@@ -266,7 +278,7 @@ class Gui:
 
     def update_curr_exercise(self):
         # load values from entry widgets to current exercise or workout when exercise is not in progress
-        if not self.user.curr_exe.started and not self.user.curr_exe.finished and not self.user.curr_workout.started:
+        if not self.user.curr_exe_started and not self.user.curr_exe_finished and not self.user.curr_workout_started:
             inputs = self.get_inputs()
             self.user.curr_exe.name = inputs[0]
             self.user.curr_exe.worktime = inputs[1]
@@ -275,7 +287,7 @@ class Gui:
             self.user.curr_exe.delay = inputs[4]
             self.user.check_exe()
             self.curr_exe_text_str.set(self.user.curr_exe.name)
-            if self.user.valid_exe:
+            if self.user.curr_exe_valid:
                 self.start_btn.configure(state=NORMAL)
             else:
                 self.start_btn.configure(state=DISABLED)
@@ -358,14 +370,15 @@ class Gui:
     def select_workout(self, selected):
         # select workout from option menu and load it as current workout into list and user.curr_workout
         # when current workout is not started
-        if not self.user.curr_workout.started:
+        if not self.user.curr_workout_started:
             # if selected workout is found its content are written current workout list and user.curr_workout
             if self.user.load_workout(selected):
                 size = self.curr_workout_list.size()
                 self.curr_workout_list.delete(0, size)
                 for i,exe in enumerate(self.user.workouts[selected].exercises,1):
                     self.curr_workout_list.insert(i, exe[0])
-                self.curr_workout_list.index(1)
+                self.curr_workout_list.select_set(0)
+
 
     def log_out(self):
         # logout by unhide main window, close frame
@@ -379,7 +392,7 @@ class Gui:
     def save_exercise(self):
         # save button function
         # save entry widget values into Exercise object and database
-        if self.user.curr_workout.started:
+        if self.user.curr_workout_started:
             mb.showerror('Error', 'Workout in progress.')
             return
         inputs = self.get_inputs()
@@ -400,7 +413,7 @@ class Gui:
     def delete_exercise(self):
         # delete currently selected exercise from user class and DB
         # cannot change exercises when workout in progress
-        if self.user.curr_workout.started:
+        if self.user.curr_workout_started:
             mb.showerror('Error', 'Workout in progress.')
             return
 

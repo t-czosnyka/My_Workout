@@ -62,7 +62,7 @@ class Login:
         user = self.DB.get_user(login)
         gui = Gui(self.root, frame, user, self.DB)
         # call continuous update function
-        gui.update()
+        gui.cont_update()
 
 
 
