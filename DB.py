@@ -39,7 +39,7 @@ class DB:
                           UNIQUE(user_id,name), FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE)")
 
         mycursor.execute("CREATE TABLE IF NOT EXISTS work_users (work_id INT AUTO_INCREMENT PRIMARY KEY, user_id INT,\
-                          name  VARCHAR(40), UNIQUE(user_id,name),\
+                          name  VARCHAR(40), extra_break_sec INT DEFAULT 0, UNIQUE(user_id,name),\
                           FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE)")
 
         mycursor.execute("CREATE TABLE IF NOT EXISTS work_exes (work_id INT, exe_id INT, order_num INT, \
@@ -60,11 +60,12 @@ class DB:
         # Create test exercises
         self.save_exercise('test', 'test_exe', 10, 5, 2, 5)
         self.save_exercise('test', 'test_exe2', 9, 4, 1, 4)
+        self.save_exercise('test', 'no_work', 20, 10, 5, 5)
         self.save_exercise('test2', 'test2_exe', 8, 4, 1, 3)
         self.save_exercise('test2', 'test2_exe2', 6, 2, 2, 2)
-        self.add_workout('test', 'test_workout', ['test_exe','test_exe2'])
-        self.add_workout('test', 'test2_workout', ['test_exe2','test_exe'])
-        self.add_workout('test2', 'test2_workout', ['test2_exe','test2_exe2'])
+        self.add_workout('test', 'test_workout', ['test_exe','test_exe2'],0)
+        self.add_workout('test', 'test2_workout', ['test_exe2','test_exe'],5)
+        self.add_workout('test2', 'test2_workout', ['test2_exe','test2_exe2'],10)
 
     def connect_to_DB(self):
         # connecting to the database, return connection object if succesful, return None if error
@@ -162,7 +163,8 @@ class DB:
         # If connection is successful run mysql query
         # Get workout data from DB
         mycursor = my_db.cursor()
-        mycursor.execute(f"SELECT work_users.name, exercises.name, work_exes.order_num FROM work_users \
+        mycursor.execute(f"SELECT work_users.name, exercises.name, work_exes.order_num, work_users.extra_break_sec \
+            FROM work_users \
             INNER JOIN work_exes ON work_users.work_id = work_exes.work_id \
             INNER JOIN exercises ON work_exes.exe_id = exercises.exe_id \
             WHERE work_users.user_id =(SELECT user_id FROM users WHERE name = '{user_name}');")
@@ -171,8 +173,9 @@ class DB:
         for w in wr_db:
             if w[0] in workouts:
                 workouts[w[0]].exercises.append((w[1],w[2]))
+                workouts[w[0]].extra_break_sec=w[3]
             else:
-                workouts[w[0]]=Workout(w[0],[(w[1],w[2])])
+                workouts[w[0]]=Workout(w[0],[(w[1],w[2])],w[3])
         my_db.close()
         for key in workouts.keys():
             workouts[key].exercises.sort(key=lambda x:x[1])
@@ -227,7 +230,7 @@ class DB:
         my_db.close()
         return res,error
 
-    def add_workout(self,user_name,workout_name,exercises:list):
+    def add_workout(self,user_name,workout_name,exercises:list,extra_break_sec):
         # add or update existing workout in DB, clear existing exercises in work_exe table to preserve order nums
         my_db = self.connect_to_DB()
         if not my_db:
@@ -242,8 +245,8 @@ class DB:
             return False, 'User not found.'
         # add workout into work_users table
         try:
-            mycursor.execute(f"INSERT INTO work_users (user_id, name) \
-            VALUES ({user_id},'{workout_name}') ON DUPLICATE KEY UPDATE work_id = work_id ")
+            mycursor.execute(f"INSERT INTO work_users (user_id, name, extra_break_sec) \
+            VALUES ({user_id},'{workout_name}',{extra_break_sec}) ON DUPLICATE KEY UPDATE work_id = work_id ")
         except mysql.connector.Error as err:
             print(err)
             return False, 'Failed to create workout.'

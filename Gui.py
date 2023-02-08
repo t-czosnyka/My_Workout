@@ -164,7 +164,7 @@ class Gui:
         # Show current exercise:
         self.curr_exe_text = Label(self.frame,textvariable=self.curr_exe_text_str, font=("Helvetica", 20),
                                    fg=self.color_str.get())
-        self.curr_exe_text.place(x=200, y=200)
+        self.curr_exe_text.place(x=320, y=15)
 
         ### Workouts #####
         # create workout start button
@@ -206,7 +206,8 @@ class Gui:
         self.timer_value_str.set(self.user.my_timer.time_str)
         self.round_num_int.set(self.user.curr_exe_round)
         self.curr_mode_str.set(self.user.curr_exe_mode)
-        self.curr_exe_text_str.set(self.user.curr_exe.name)
+        if self.user.curr_exe.name != '':
+            self.curr_exe_text_str.set(self.user.curr_exe.name)
         if self.user.curr_exe_mode == 'Delay' or self.user.curr_exe_mode == 'Break':
             self.mode_text.configure(fg="red")
             self.round_text.configure(fg="red")
@@ -281,10 +282,10 @@ class Gui:
         if not self.user.curr_exe_started and not self.user.curr_exe_finished and not self.user.curr_workout_started:
             inputs = self.get_inputs()
             self.user.curr_exe.name = inputs[0]
-            self.user.curr_exe.worktime = inputs[1]
-            self.user.curr_exe.breaktime = inputs[2]
+            self.user.curr_exe.worktime_sec = inputs[1]
+            self.user.curr_exe.breaktime_sec = inputs[2]
             self.user.curr_exe.num_rounds = inputs[3]
-            self.user.curr_exe.delay = inputs[4]
+            self.user.curr_exe.delay_sec = inputs[4]
             self.user.check_exe()
             self.curr_exe_text_str.set(self.user.curr_exe.name)
             if self.user.curr_exe_valid:
@@ -360,12 +361,12 @@ class Gui:
         # insert selected values into entry widgets
         if selected in self.user.exercises:
             self.exercise_name_str.set(self.user.exercises[selected].name)
-            self.work_time_min_str.set(str(self.user.exercises[selected].worktime // 60))
-            self.work_time_sec_str.set(str(self.user.exercises[selected].worktime % 60))
-            self.break_time_min_str.set(str(self.user.exercises[selected].breaktime // 60))
-            self.break_time_sec_str.set(str(self.user.exercises[selected].breaktime % 60))
+            self.work_time_min_str.set(str(self.user.exercises[selected].worktime_sec // 60))
+            self.work_time_sec_str.set(str(self.user.exercises[selected].worktime_sec % 60))
+            self.break_time_min_str.set(str(self.user.exercises[selected].breaktime_sec // 60))
+            self.break_time_sec_str.set(str(self.user.exercises[selected].breaktime_sec % 60))
             self.num_rounds_str.set(str(self.user.exercises[selected].num_rounds))
-            self.delay_time_sec_str.set(str(self.user.exercises[selected].delay))
+            self.delay_time_sec_str.set(str(self.user.exercises[selected].delay_sec))
 
     def select_workout(self, selected):
         # select workout from option menu and load it as current workout into list and user.curr_workout
