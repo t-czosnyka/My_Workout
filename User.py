@@ -21,9 +21,11 @@ class User:
         self.curr_exe_valid = False
         self.curr_exe_started = False
         self.curr_exe_finished = False
+        self.exe_work_finish = False
+        self.exe_break_finish = False
         # Workout data
         self.curr_workout = Workout('', [], 0)
-        self.workout_break_exe = Exercise('', 0, 0, 1, 0)
+        self.workout_break_exe = Exercise('', 0, 0, 2, 0)
         self.curr_workout_started = False
         self.curr_workout_finished = False
         self.curr_workout_break = False
@@ -37,64 +39,68 @@ class User:
         self.exe_running = False
 
     def run_exe(self):
-        # run current exercise
-        # if exercise not in progress or started update display and return
+        # run current exercise: delay->(work->break)*n-1->work, n - number of rounds, no break in last round
+        # if exercise not in progress or finished update display and return
         if not self.exe_running and not self.curr_exe_started or self.curr_exe_finished:
-            # load current values into the timer, for display
-            if self.curr_exe.delay_sec > 0:
-                self.curr_exe_mode = 'Delay'
-                self.my_timer.active_time = self.curr_exe.delay_sec
-            else:
-                self.curr_exe_mode = 'Ready'
-                self.my_timer.active_time = self.curr_exe.worktime_sec
-            # update timer dispaly
-            self.my_timer.calculate_time()
+            self.update_display()
             return -1
         # if exercise is not valid - worktime > 0, number of rounds > 0 or finished return
         if not self.curr_exe_valid:
             return -2
         self.curr_exe_started = True
-        # Exercise running - check if delay is present
-        if self.curr_exe.delay_sec > 0 and not self.curr_exe_delay_done:
-            # Run delay
+        # Exercise running select mode Delay/Work/Break
+        delay = self.curr_exe.delay_sec > 0 and not self.curr_exe_delay_done
+        # Delay Mode
+        if delay:
             self.curr_exe_mode = 'Delay'
             # Start timer
             if self.my_timer.timing_function(self.curr_exe.delay_sec, self.exe_running):
                 self.curr_exe_delay_done = True
                 self.my_timer.reset()
-        # If delay not present or finished run proper exercise
+        # Work Mode
+        elif not self.exe_work_finish and self.curr_exe.worktime_sec > 0:
+            self.curr_exe_mode = 'Work'
+            # Start timer
+            if self.my_timer.timing_function(self.curr_exe.worktime_sec, self.exe_running):
+                self.my_timer.reset()
+                self.exe_work_finish = True
+        # Break Mode
         else:
-            # check Work mode/Break mode
-            if not self.curr_exe_break_on and self.curr_exe.worktime_sec > 0:
-                # Work mode
-                self.curr_exe_mode = 'Work'
-                # Start timer
-                if self.my_timer.timing_function(self.curr_exe.worktime_sec, self.exe_running):
-                    # Timer finished
-                    if self.curr_exe.breaktime_sec > 0 and self.curr_exe_round < self.curr_exe.num_rounds:
-                        self.curr_exe_break_on = True
-                    else:
-                        self.curr_exe_round += 1
-                    self.my_timer.reset()
-            else:
-                # Break mode
-                self.curr_exe_mode = 'Break'
-                # Start timer
-                if self.my_timer.timing_function(self.curr_exe.breaktime_sec, self.exe_running):
-                    # Timer finished
-                    if self.curr_exe.worktime_sec > 0:
-                        self.curr_exe_break_on = False
-                    self.my_timer.reset()
-                    self.curr_exe_round += 1
-            if self.curr_exe_round > self.curr_exe.num_rounds:
-                # End of exercise
-                self.curr_exe_round = self.curr_exe.num_rounds
-                self.curr_exe_finished = True
+            self.curr_exe_mode = 'Break'
+            # Start timer
+            if self.my_timer.timing_function(self.curr_exe.breaktime_sec, self.exe_running):
+                self.my_timer.reset()
+                self.exe_break_finish = True
+        # Round finished, reset marker and increment number of rounds, not for delay
+        if not delay and (self.exe_work_finish or self.curr_exe.worktime_sec == 0) and\
+                (self.exe_break_finish or self.curr_exe.breaktime_sec == 0 or
+                 self.curr_exe_round == self.curr_exe.num_rounds):
+            self.exe_work_finish = False
+            self.exe_break_finish = False
+            self.curr_exe_round += 1
+        # End of exercise, special condition if worktime = 0
+        if self.curr_exe_round > self.curr_exe.num_rounds or\
+                self.curr_exe.worktime_sec == 0 and self.curr_exe_round == self.curr_exe.num_rounds:
+            self.curr_exe_round = self.curr_exe.num_rounds
+            self.curr_exe_finished = True
 
+    def update_display(self):
+        # updating dispaly for fluid visualisation
+        # load current values into the timer, for display
+        if self.curr_exe.delay_sec > 0:
+            self.curr_exe_mode = 'Delay'
+            self.my_timer.active_time = self.curr_exe.delay_sec
+        elif self.curr_exe.worktime_sec > 0:
+            self.curr_exe_mode = 'Work'
+            self.my_timer.active_time = self.curr_exe.worktime_sec
+        else:
+            self.curr_exe_mode = 'Break'
+            self.my_timer.active_time = self.curr_exe.breaktime_sec
+        # update timer display
+        self.my_timer.calculate_time()
 
     def reset_exe(self):
         # reset current exercise to start values
-        #self.curr_exe_mode = 'Ready'
         self.curr_exe_delay_done = False
         self.curr_exe_break_on = False
         self.curr_exe_round = 1
@@ -102,6 +108,8 @@ class User:
         self.my_timer.reset()
         self.curr_exe_started = False
         self.curr_exe_finished = False
+        self.exe_work_finish = False
+        self.exe_break_finish = False
 
     def reset_workout(self):
         # reset current workout to start values
@@ -111,7 +119,8 @@ class User:
 
     def check_exe(self):
         # return true if exercise is valid: worktime > 0, number of rounds > 0 return
-        if self.curr_exe.num_rounds > 0 and (self.curr_exe.worktime_sec > 0 or self.curr_exe.breaktime_sec > 0):
+        if self.curr_exe.num_rounds > 0 and (self.curr_exe.worktime_sec > 0 or
+                                             (self.curr_exe.breaktime_sec > 0 and self.curr_exe.num_rounds > 1)):
             self.curr_exe_valid = True
         else:
             self.curr_exe_valid = False

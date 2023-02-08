@@ -148,7 +148,7 @@ class Gui:
 
         # save exercise button
         self.save_btn = Button(self.frame, text="Save Exercise", command=self.save_exercise, state=DISABLED, width=12)
-        self.save_btn.place(x=20, y=394)
+        self.save_btn.place(x=20, y=397)
 
         # delete exercise button
         self.delete_btn = Button(self.frame, text="Delete Exercise", command=self.delete_exercise, width=12)
@@ -169,11 +169,11 @@ class Gui:
         ### Workouts #####
         # create workout start button
         self.start_work_btn = Button(self.frame, text='Start Workout', width=12,command=self.start_workout)
-        self.start_work_btn.place(x=300, y=400)
+        self.start_work_btn.place(x=300, y=430)
 
         # create list with current workout
-        self.curr_workout_list = Listbox(self.frame, height=5, selectmode=SINGLE)
-        self.curr_workout_list.place(x=300, y=312)
+        self.curr_workout_list = Listbox(self.frame, height=7, selectmode=SINGLE)
+        self.curr_workout_list.place(x=300, y=279)
 
         # create option menu based on user workouts
         self.create_workout_menu()
@@ -189,6 +189,7 @@ class Gui:
             if not self.user.curr_workout_started:
                 self.user.reset_exe()
                 self.pause_timer()
+                self.user.update_display()
             # Exercise finished in workout mode
             else:
                 # Reset and start next exercise
@@ -339,7 +340,7 @@ class Gui:
                                               command=self.select_exercise)
             self.select_exe_str.set('')
             self.exercise_name_str.set('')
-        self.select_exe_menu.place(x=120, y=391)
+        self.select_exe_menu.place(x=120, y=394)
 
     def create_workout_menu(self):
         # create option menu with workouts of current user
@@ -355,7 +356,7 @@ class Gui:
             # if no workouts are available write empty value to menu options
             self.select_workout_menu = OptionMenu(self.frame, self.select_work_str, value='',
                                                   command=self.select_workout)
-        self.select_workout_menu.place(x=300, y=279)
+        self.select_workout_menu.place(x=298, y=394)
 
     def select_exercise(self, selected):
         # insert selected values into entry widgets
@@ -378,9 +379,6 @@ class Gui:
                 self.curr_workout_list.delete(0, size)
                 for i,exe in enumerate(self.user.workouts[selected].exercises,1):
                     self.curr_workout_list.insert(i, exe[0])
-                self.curr_workout_list.select_set(0)
-
-
     def log_out(self):
         # logout by unhide main window, close frame
         self.frame.destroy()
