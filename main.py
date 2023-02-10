@@ -4,11 +4,15 @@ from Login import Login
 from DB import DB
 
 
+def main():
+    my_db = DB()  # Initialize database
+    root = Tk()     # root window
+    Login(root, my_db)  # Create login window
+    root.mainloop()     # Tkinter main loop
+
+
 if __name__ == '__main__':
-    my_db = DB()            # Initialize database
-    root = Tk()
-    Login(root, my_db)          # Create login window
-    root.mainloop()
+    main()
 
 
 

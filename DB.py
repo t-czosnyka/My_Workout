@@ -270,6 +270,25 @@ class DB:
         my_db.commit()
         my_db.close()
 
+    def add_user(self, user_name, email, password):
+        # create new user in database
+        # connect to DB, if not possible return error
+        my_db = self.connect_to_DB()
+        if not my_db:
+            return False, 'DB connection error.'
+        # if connection is ok, check if user with given name already exists
+        mycursor = my_db.cursor()
+        mycursor.execute(f"SELECT * FROM users")
+        users = mycursor.fetchall()
+        for user in users:
+            if user_name == user[1]:
+                return False, 'User with that name already exists.'
+        # if name is free add user
+        mycursor.execute(f"INSERT INTO users (name, email, password) VALUES('{user_name}','{email}','{password}')")
+        my_db.commit()
+        my_db.close()
+
+        return True,''
 
 
 

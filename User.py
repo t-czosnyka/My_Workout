@@ -5,9 +5,10 @@ from Timer import Timer
 from Workout import Workout
 class User:
 
-    def __init__(self, name: str, admin: bool, exercises, workouts):
+    def __init__(self, name: str, email, password, exercises, workouts):
         self.name = name
-        self.admin = admin
+        self.email = email
+        self.password = password
         self.exercises = exercises  # exercises data
         self.workouts = workouts    # workouts data
         self.my_timer = Timer()
