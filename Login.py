@@ -1,7 +1,7 @@
 from tkinter import *
 from DB import DB
 from Gui import Gui
-from CreateUserWindow import CreateUserWindow
+from UserWindow import CreateUserWindow
 
 class Login:
     # class handles login screen and creates Gui and User objects on successful login

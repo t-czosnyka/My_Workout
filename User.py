@@ -5,10 +5,9 @@ from Timer import Timer
 from Workout import Workout
 class User:
 
-    def __init__(self, name: str, email, password, exercises, workouts):
+    def __init__(self, name: str, email, exercises, workouts):
         self.name = name
         self.email = email
-        self.password = password
         self.exercises = exercises  # exercises data
         self.workouts = workouts    # workouts data
         self.my_timer = Timer()
@@ -194,6 +193,9 @@ class User:
         # Delete exercise with given name if present
         if exe_name in self.exercises:
             self.exercises.pop(exe_name)
+
+    def change_data(self, data):
+        self.email = data[0]
 
 
 

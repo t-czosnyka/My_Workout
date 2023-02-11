@@ -5,6 +5,7 @@ from tkinter import *
 from Exercise import Exercise
 from tkinter import messagebox as mb
 from DB import DB
+from UserWindow import EditUserWindow
 
 
 class Gui:
@@ -55,17 +56,22 @@ class Gui:
         self.select_work_str.set('')
         self.curr_exe_text_str.set('')
 
+        ### User ###
         # Show user_name
         self.user_name_text = Label(self.frame, textvariable=self.user_name_str, font=("Helvetica", 10))
         self.user_name_text.place(x=10, y=10)
 
-        #logout button
+        # logout button
         self.logout_btn = Button(self.frame, text="Logout", command=self.log_out)
         self.logout_btn.place(x=10, y=35)
 
         # Delete user button
-        self.delete_user_btn = Button(self.frame, text="Delete User", command=self.ask_delete_user)
+        self.delete_user_btn = Button(self.frame, text="Delete User", command=self.ask_delete_user, width=9)
         self.delete_user_btn.place(x=65, y=35)
+
+        # Edit User Button
+        self.edit_user_btn = Button(self.frame, text="Edit User", command=self.edit_user_window, width=9)
+        self.edit_user_btn.place(x=65, y=6)
 
         # Create timer widgets
         self.mode_text = Label(self.frame, textvariable=self.curr_mode_str, font=("Helvetica", 40), fg=self.color_str.get())
@@ -448,4 +454,10 @@ class Gui:
             return
         self.log_out()
         mb.showinfo('OK', 'User deleted.')
+
+    def edit_user_window(self):
+        # Create a new window for editing user data
+        self.frame.withdraw()
+        window = Toplevel()
+        EditUserWindow(self.frame, window, self.DB, self.user)
 

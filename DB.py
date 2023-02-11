@@ -111,7 +111,8 @@ class DB:
         # Create and return User object with data from DB
         exercises = self.get_exercises(user_name)
         workouts = self.get_workouts(user_name)
-        user = User(user_name,False,exercises,workouts)
+        data = self.get_user_data(user_name)
+        user = User(user_name,*data,exercises,workouts)
         return user
 
     def save_exercise(self, user_name, exe_name, worktime, breaktime, num_rounds, delay):
@@ -152,6 +153,19 @@ class DB:
             exercises[exe[0]] = Exercise(exe[0],exe[1],exe[2],exe[3],exe[4])
         my_db.close()
         return exercises
+
+    def get_user_data(self, user_name):
+        # User data for user with given name
+        # Connect to DB, if connection fails, return empty dict
+        my_db = self.connect_to_DB()
+        if not my_db:
+            return False, 'DB connection error.'
+        # If connection is successful run mysql query
+        mycursor = my_db.cursor()
+        mycursor.execute(f"SELECT email FROM users \
+                                 WHERE name = '{user_name}'")
+        email = mycursor.fetchall()[0]
+        return [email]
 
     def get_workouts(self, user_name):
         # Get workouts data from DB for user
@@ -278,18 +292,35 @@ class DB:
             return False, 'DB connection error.'
         # if connection is ok, check if user with given name already exists
         mycursor = my_db.cursor()
-        mycursor.execute(f"SELECT * FROM users")
-        users = mycursor.fetchall()
-        for user in users:
-            if user_name == user[1]:
-                return False, 'User with that name already exists.'
-        # if name is free add user
+        mycursor.execute(f"SELECT * FROM users \
+                          WHERE name = '{user_name}'")
+        user = mycursor.fetchall()
+        # return if no user with this name found
+        if len(user) == 1:
+            return False, 'User with that name already exists.'
+        # if name is not taken -> add user
         mycursor.execute(f"INSERT INTO users (name, email, password) VALUES('{user_name}','{email}','{password}')")
         my_db.commit()
         my_db.close()
+        return True, ''
 
-        return True,''
-
+    def edit_user(self, user_name, email, password):
+        # edit already existing user with given data
+        # connect to DB, if not possible return error
+        my_db = self.connect_to_DB()
+        if not my_db:
+            return False, 'DB connection error.'
+        mycursor = my_db.cursor()
+        mycursor.execute(f"SELECT * FROM users \
+                                 WHERE name = '{user_name}'")
+        user = mycursor.fetchall()
+        # return if no user with this name found
+        if len(user) == 0:
+            return False, 'User not found.'
+        mycursor.execute(f"UPDATE users SET email = '{email}', password ='{password}' WHERE name = '{user_name}'")
+        my_db.commit()
+        my_db.close()
+        return True, ''
 
 
 

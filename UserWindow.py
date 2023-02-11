@@ -2,9 +2,9 @@ from tkinter import *
 from tkinter import messagebox as mb
 
 
-class CreateUserWindow:
-    # class representing separate create user window,
-    # creates widgets, checks if inputs are valid and calls DB function to create new user
+class UserWindow:
+    # parent class for create user window and edit user window
+    # creates widgets, checks if inputs are valid
 
     def __init__(self, root, window, DB):
         self.root = root # login window
@@ -21,9 +21,6 @@ class CreateUserWindow:
         self.repeat_password_str = StringVar()
 
         # Create widgets
-        self.create_user_btn = Button(self.window, text="Create User", command=self.create_user, width = 12)
-        self.create_user_btn.place(x=30, y=200)
-
         self.name_label = Label(self.window, text='Name:')
         self.name_label.place(x=10, y=10)
 
@@ -57,24 +54,6 @@ class CreateUserWindow:
         self.repeat_password_str.trace("w", lambda x,y,z: self.is_password_valid(self.repeat_password_str,
                                         self.repeat_password_entry))
 
-    def create_user(self):
-        # button function, rechecks all inputs, shows message if they are incorrect,
-        # checks if password and reppeat password are the same
-        # calls DB function to add user
-        if not (self.is_name_valid() and self.is_email_valid() and
-                self.is_password_valid(self.password_str, self.password_entry) and
-                self.is_password_valid(self.repeat_password_str, self.repeat_password_entry)):
-            mb.showerror('Error', 'Incorrect inputs.')
-            return
-        if self.password_str.get() != self.repeat_password_str.get():
-            mb.showerror('Error', 'Repeated password not identical.')
-            return
-        # If no errors call DB function, res = True if user was successfully created, error = error message if occurred
-        res, error = self.DB.add_user(self.name_str.get(), self.email_str.get(), self.password_str.get())
-        if res:
-            mb.showinfo('Success', 'User successfully created.')
-        else:
-            mb.showerror('Error','Database Error:'+ error)
 
 
     def on_closing(self):
@@ -140,5 +119,73 @@ class CreateUserWindow:
             widget.configure(highlightbackground="light grey", highlightcolor="light grey")
             return True
 
+class CreateUserWindow(UserWindow):
+    # Creating new user window class allowing to create new user withou loggin in
+    def __init__(self, root, window, DB):
+        # call init of parent class
+        super().__init__(root,window, DB)
+        # Add create user button
+        self.create_user_btn = Button(self.window, text="Create User", command=self.create_user, width = 12)
+        self.create_user_btn.place(x=30, y=200)
+
+    def create_user(self):
+        # button function, rechecks all inputs, shows message if they are incorrect,
+        # checks if password and reppeat password are the same
+        # calls DB function to add user
+        if not (self.is_name_valid() and self.is_email_valid() and
+                self.is_password_valid(self.password_str, self.password_entry) and
+                self.is_password_valid(self.repeat_password_str, self.repeat_password_entry)):
+            mb.showerror('Error', 'Incorrect inputs.')
+            return
+        if self.password_str.get() != self.repeat_password_str.get():
+            mb.showerror('Error', 'Repeated password not identical.')
+            return
+        # If no errors call DB function, res = True if user was successfully created, error = error message if occurred
+        res, error = self.DB.add_user(self.name_str.get(), self.email_str.get(), self.password_str.get())
+        if res:
+            mb.showinfo('Success', 'User successfully created.')
+            self.on_closing()
+        else:
+            mb.showerror('Error', 'Database Error:' + error)
+
+
+class EditUserWindow(UserWindow):
+    # Editing window class which allows to change parameters of currently logged in user
+    def __init__(self, root, window, DB, user):
+        # call init of parent class
+        super().__init__(root,window, DB)
+        # add edit button
+        self.create_user_btn = Button(self.window, text="Save Data", command=lambda: self.edit_user(user), width = 12)
+        self.create_user_btn.place(x=30, y=200)
+
+        # set user name to current user and disable editing
+        self.name_str.set(user.name)
+        self.name_entry.configure(state=DISABLED)
+
+        # insert current email into email field
+        self.email_str.set(user.email)
+
+
+    def edit_user(self, user):
+        # button function, rechecks all inputs, shows message if they are incorrect,
+        # checks if password and repeat password are the same
+        # calls DB function to edit user
+        if not (self.is_name_valid() and self.is_email_valid() and
+                self.is_password_valid(self.password_str, self.password_entry) and
+                self.is_password_valid(self.repeat_password_str, self.repeat_password_entry)):
+            mb.showerror('Error', 'Incorrect inputs.')
+            return
+        if self.password_str.get() != self.repeat_password_str.get():
+            mb.showerror('Error', 'Repeated password not identical.')
+            return
+        # If no errors call DB function, res = True if user was successfully created, error = error message if occurred
+        res, error = self.DB.edit_user(self.name_str.get(), self.email_str.get(), self.password_str.get())
+        if res:
+            mb.showinfo('Success', 'Data successfully edited.')
+            self.window.destroy()
+            self.root.deiconify()
+            user.change_data([self.email_str.get()])
+        else:
+            mb.showerror('Error', 'Database Error:' + error)
 
 
