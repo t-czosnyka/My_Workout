@@ -5,14 +5,14 @@ from Timer import Timer
 from Workout import Workout
 class User:
 
-    def __init__(self, name: str, email, exercises, workouts):
+    def __init__(self, name: str, email: str, exercises: dict, workouts: dict):
         self.name = name
         self.email = email
         self.exercises = exercises  # exercises data
         self.workouts = workouts    # workouts data
         self.my_timer = Timer()
         # Exercise data
-        self.curr_exe = Exercise('', 0, 0, 0, 0)
+        self.curr_exe = Exercise('', 0, 0, 0, 0)g
         self.exe_running = False            #start/pause
         self.curr_exe_mode = 'Ready'
         self.curr_exe_delay_done = False
