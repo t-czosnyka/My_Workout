@@ -5,14 +5,14 @@ from Timer import Timer
 from Workout import Workout
 class User:
 
-    def __init__(self, name: str, email: str, exercises: dict, workouts: dict):
+    def __init__(self, name: str, exercises: dict, workouts: dict, email: str,):
         self.name = name
         self.email = email
         self.exercises = exercises  # exercises data
         self.workouts = workouts    # workouts data
         self.my_timer = Timer()
         # Exercise data
-        self.curr_exe = Exercise('', 0, 0, 0, 0)g
+        self.curr_exe = Exercise('', 0, 0, 0, 0)
         self.exe_running = False            #start/pause
         self.curr_exe_mode = 'Ready'
         self.curr_exe_delay_done = False
@@ -149,26 +149,23 @@ class User:
 
     def run_workout(self):
         # continuous function to run current workout
-        if not self.curr_workout_started:
+        if not self.curr_workout_started or self.curr_workout_finished:
             return
         # curr_exe_finished set by run_exe function
         if self.curr_exe_finished:
             # check if there are more exercises
-            if len(self.curr_workout.exercises) > 0:
-                # Break between exercises
-                if self.curr_workout_break and self.curr_workout.extra_break_sec > 0:
-                    print("workout break")
-                    self.curr_exe = copy.deepcopy(self.workout_break_exe)
-                    self.curr_workout_break = False
-                # Next exercise
-                else:
-                    if self.load_next_exercise():
-                        print("New exercise")
-                        self.curr_workout_break = True
-            else:
-                # End of workout
-                print("end workout")
+            if len(self.curr_workout.exercises) == 0:
+                # End of workout if no moe exercises left
                 self.curr_workout_finished = True
+                return
+            # If more exercises are present continue workout
+            # Break between exercises
+            if self.curr_workout_break and self.curr_workout.extra_break_sec > 0:
+                self.curr_exe = copy.deepcopy(self.workout_break_exe)
+                self.curr_workout_break = False
+            # Next exercise
+            elif self.load_next_exercise():
+                self.curr_workout_break = True
 
     def load_workout(self, selected_name):
         # Load selected workout into curr_workout
@@ -193,6 +190,19 @@ class User:
         # Delete exercise with given name if present
         if exe_name in self.exercises:
             self.exercises.pop(exe_name)
+        else:
+            return
+        # Delete exercise from user workouts and adjust order numbers
+        for workout in self.workouts.values():
+            shift = 0
+            for i, exe in enumerate(workout.exercises):
+                # delete exercise if found in workout
+                if exe[0] == exe_name:
+                    workout.exercises.pop(i)
+                    shift += 1
+                # adjust order number for other exercises
+                elif shift > 0:
+                    exe[1] -= shift
 
     def change_data(self, data):
         self.email = data[0]

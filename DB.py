@@ -89,7 +89,6 @@ class DB:
         my_db = self.connect_to_DB()
         if not my_db:
             return
-
         mycursor = my_db.cursor()
         # get logins from DB
         mycursor.execute("SELECT name FROM users")
@@ -112,10 +111,10 @@ class DB:
         exercises = self.get_exercises(user_name)
         workouts = self.get_workouts(user_name)
         data = self.get_user_data(user_name)
-        user = User(user_name,*data,exercises,workouts)
+        user = User(user_name, exercises, workouts, *data,)
         return user
 
-    def save_exercise(self, user_name, exe_name, worktime, breaktime, num_rounds, delay):
+    def save_exercise(self, user_name, exe_name, worktime_sec, breaktime_sec, num_rounds, delay_sec):
         error = ''
         my_db = self.connect_to_DB()
         if not my_db:
@@ -125,9 +124,9 @@ class DB:
         try:
             mycursor.execute(f"INSERT INTO exercises (user_id, name,time_work,time_rest,num_rounds,delay) \
                              VALUES((SELECT user_id FROM users WHERE name='{user_name}'),\
-                             '{exe_name}',{worktime},{breaktime},{num_rounds},{delay})\
-                             ON DUPLICATE KEY UPDATE time_work={worktime},time_rest={breaktime},\
-                             num_rounds={num_rounds},delay={delay}")
+                             '{exe_name}',{worktime_sec},{breaktime_sec},{num_rounds},{delay_sec})\
+                             ON DUPLICATE KEY UPDATE time_work={worktime_sec},time_rest={breaktime_sec},\
+                             num_rounds={num_rounds},delay={delay_sec}")
         except mysql.connector.Error as err:
             error = err
         else:
@@ -156,10 +155,10 @@ class DB:
 
     def get_user_data(self, user_name):
         # User data for user with given name
-        # Connect to DB, if connection fails, return empty dict
+        # Connect to DB, if connection fails, return empty list
         my_db = self.connect_to_DB()
         if not my_db:
-            return False, 'DB connection error.'
+            return []
         # If connection is successful run mysql query
         mycursor = my_db.cursor()
         mycursor.execute(f"SELECT email FROM users \
@@ -198,16 +197,20 @@ class DB:
     def delete_exercise(self,user_name,exe_name):
         # delete exercise from DB
         error = ''
+        # Connect to DB, if connection fails return False + error message
         my_db = self.connect_to_DB()
         if not my_db:
             return False, error
         mycursor = my_db.cursor()
         res = False
+        # Check if exercise with given name exists in database
         mycursor.execute(f"SELECT * FROM exercises \
                          WHERE user_id = (SELECT user_id FROM users WHERE name='{user_name}') AND name='{exe_name}'")
         exe = mycursor.fetchall()
+        # return error message if exercise is not found
         if len(exe) == 0:
             return False, 'Exercise not found.'
+        # If exercise exists - delete from database, if query fails return False and error message
         try:
             mycursor.execute(f"DELETE FROM exercises  \
                              WHERE user_id = (SELECT user_id FROM users WHERE name='{user_name}') AND name='{exe_name}'")
@@ -242,9 +245,9 @@ class DB:
         else:
             res = True
         my_db.close()
-        return res,error
+        return res, error
 
-    def add_workout(self,user_name,workout_name,exercises:list,extra_break_sec):
+    def add_workout(self, user_name: str, workout_name: str, exercises: list, extra_break_sec: int):
         # add or update existing workout in DB, clear existing exercises in work_exe table to preserve order nums
         my_db = self.connect_to_DB()
         if not my_db:
@@ -284,8 +287,10 @@ class DB:
         my_db.commit()
         my_db.close()
 
-    def add_user(self, user_name, email, password):
+    def add_user(self, user_name: str, email: str, password: str):
         # create new user in database
+        if len(user_name) == 0 or len(email) == 0 or len(password) == 0:
+            return False, 'Wrong input data.'
         # connect to DB, if not possible return error
         my_db = self.connect_to_DB()
         if not my_db:
@@ -295,7 +300,7 @@ class DB:
         mycursor.execute(f"SELECT * FROM users \
                           WHERE name = '{user_name}'")
         user = mycursor.fetchall()
-        # return if no user with this name found
+        # return error if no user with this name found
         if len(user) == 1:
             return False, 'User with that name already exists.'
         # if name is not taken -> add user

@@ -38,7 +38,6 @@ class Gui:
         self.select_exe_str = StringVar()
         self.user_name_str = StringVar()
         self.exe_msg_str = StringVar()
-        self.select_work_str = StringVar()
         self.curr_exe_text_str = StringVar()
 
         # Initialize tkinter variables
@@ -52,11 +51,8 @@ class Gui:
         self.break_time_sec_str.set('0')
         self.num_rounds_str.set('0')
         self.delay_time_sec_str.set('0')
-        self.select_exe_str.set('')
         self.user_name_str.set(f'{self.user.name}')
-        self.exe_msg_str.set('')
-        self.select_work_str.set('')
-        self.curr_exe_text_str.set('')
+
 
         ### User ###
         # Show user_name
@@ -75,6 +71,7 @@ class Gui:
         self.edit_user_btn = Button(self.frame, text="Edit User", command=lambda : self.call_new_window(EditUserWindow), width=9)
         self.edit_user_btn.place(x=65, y=6)
 
+        ### Timer ###
         # Create timer widgets
         self.mode_text = Label(self.frame, textvariable=self.curr_mode_str, font=("Helvetica", 40), fg=self.color_str.get())
         self.mode_text.grid(row=0, column=0, padx=(10, 0), columnspan=4)
@@ -146,14 +143,6 @@ class Gui:
                                     textvariable=self.delay_time_sec_str)
         self.delay_time_sec.place(x=150, y=371)
 
-        # trace changes in entry widgets
-        self.work_time_min_str.trace_add("write", self.value_changed)
-        self.work_time_sec_str.trace_add("write", self.value_changed)
-        self.break_time_min_str.trace_add("write", self.value_changed)
-        self.break_time_sec_str.trace_add("write", self.value_changed)
-        self.num_rounds_str.trace_add("write", self.value_changed)
-        self.delay_time_sec_str.trace_add("write", self.value_changed)
-
         # save exercise button
         self.save_btn = Button(self.frame, text="Save Exercise", command=self.save_exercise, state=DISABLED, width=12)
         self.save_btn.place(x=20, y=397)
@@ -162,7 +151,7 @@ class Gui:
         self.delete_btn = Button(self.frame, text="Delete Exercise", command=self.delete_exercise, width=12)
         self.delete_btn.place(x=20,y=428)
 
-        #status message label
+        # status message label
         self.exe_msg = Label(self.frame, textvariable=self.exe_msg_str, wraplength=300)
         self.exe_msg.place(x=20,y=460)
 
@@ -174,17 +163,25 @@ class Gui:
                                    fg=self.color_str.get())
         self.curr_exe_text.place(x=320, y=15)
 
+        # trace changes in entry widgets
+        self.work_time_min_str.trace_add("write", self.value_changed)
+        self.work_time_sec_str.trace_add("write", self.value_changed)
+        self.break_time_min_str.trace_add("write", self.value_changed)
+        self.break_time_sec_str.trace_add("write", self.value_changed)
+        self.num_rounds_str.trace_add("write", self.value_changed)
+        self.delay_time_sec_str.trace_add("write", self.value_changed)
+
         ### Workouts #####
         # create workout start button
         self.start_work_btn = Button(self.frame, text='Start Workout', width=14, command=self.start_workout)
         self.start_work_btn.place(x=300, y=428)
 
-        # create list with current workout
-        self.curr_workout_list = Listbox(self.frame, height=7, selectmode=SINGLE)
-        self.curr_workout_list.place(x=300, y=279)
+        # create list with exercises in current workout
+        self.curr_workout_exe_list = Listbox(self.frame, height=7, selectmode=SINGLE)
+        self.curr_workout_exe_list.place(x=300, y=279)
 
-        # create option menu based on user workouts
-        self.workout_menu = Menu(self.user, self.frame, 298, 395, self.curr_workout_list)
+        # create option menu with user workouts
+        self.workout_menu = Menu(self.user, self.frame, 298, 395, self.curr_workout_exe_list)
         self.workout_menu.create_workout_menu()
 
 
@@ -192,6 +189,8 @@ class Gui:
         self.edit_workout_btn = Button(self.frame, text="Edit Workout",
                                        command=lambda: self.call_new_window(WorkoutWindow), width=14)
         self.edit_workout_btn.place(x=300, y=458)
+
+
 
     def cont_update(self):
         # continuous update function
@@ -240,12 +239,12 @@ class Gui:
             self.start_work_btn.configure(text="Workout Started",state=DISABLED)
             self.workout_menu.disable()
             self.select_exe_menu.configure(state=DISABLED)
-            self.curr_workout_list.configure(state=DISABLED)
+            self.curr_workout_exe_list.configure(state=DISABLED)
         else:
             self.start_work_btn.configure(text="Start Workout",state=NORMAL)
             self.workout_menu.enable()
             self.select_exe_menu.configure(state=NORMAL)
-            self.curr_workout_list.configure(state=NORMAL)
+            self.curr_workout_exe_list.configure(state=NORMAL)
 
         # recall again every 0.1s
         self.frame.after(100, self.cont_update)
@@ -284,7 +283,7 @@ class Gui:
         else:
             return 0
 
-    def get_inputs(self):
+    def get_exercise_inputs(self):
         # get inputs from exercise entry widgets
         name = self.exercise_name_str.get()
         work_time = self.get_str_var(self.work_time_min_str) * 60 + self.get_str_var(self.work_time_sec_str)
@@ -296,7 +295,7 @@ class Gui:
     def update_curr_exercise(self):
         # load values from entry widgets to current exercise or workout when exercise is not in progress
         if not self.user.curr_exe_started and not self.user.curr_exe_finished and not self.user.curr_workout_started:
-            inputs = self.get_inputs()
+            inputs = self.get_exercise_inputs()
             self.user.curr_exe.name = inputs[0]
             self.user.curr_exe.worktime_sec = inputs[1]
             self.user.curr_exe.breaktime_sec = inputs[2]
@@ -386,12 +385,12 @@ class Gui:
         if self.user.curr_workout_started:
             mb.showerror('Error', 'Workout in progress.')
             return
-        inputs = self.get_inputs()
+        inputs = self.get_exercise_inputs()
         # Save data to DB, in case of error return
         res, error = self.DB.save_exercise(self.user.name, *inputs)
         if not res:
             # Display message
-            self.exe_msg_str.set(error)
+            mb.showerror("Database Error.", error)
             return
         # Create or update Exercise object if DB operation was susccesful
         self.user.save_exercise(inputs)
@@ -415,13 +414,15 @@ class Gui:
         # check if successfully deleted from DB
         if not res:
             # Display message
-            self.exe_msg_str.set(error)
+            mb.showerror("Database Error.", error)
             return
         # delete current name from select menu
         self.select_exe_str.set('')
         # delete current name form user exercises
         self.user.delete_exercise(exe_name)
         self.update_exercise_menu()
+        # update currently selected workout exercises list
+        self.workout_menu.select_workout(self.workout_menu.select_work_str.get())
         # Display message
         self.exe_msg_str.set('Exercise deleted.')
 
