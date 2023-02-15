@@ -29,6 +29,7 @@ class User:
         self.curr_workout_started = False
         self.curr_workout_finished = False
         self.curr_workout_break = False
+        self.req_workout_update = False
 
     def start_run(self):
         # start timer
@@ -45,6 +46,7 @@ class User:
             self.update_display()
             return -1
         # if exercise is not valid - worktime > 0, number of rounds > 0 or finished return
+        self.check_exe()
         if not self.curr_exe_valid:
             return -2
         self.curr_exe_started = True
@@ -170,6 +172,9 @@ class User:
     def load_workout(self, selected_name):
         # Load selected workout into curr_workout
         # check if selected workout exists
+        if len(self.workouts) == 0:
+            self.curr_workout = Workout('', [], 0)
+            return True
         if selected_name in self.workouts:
             self.curr_workout = copy.deepcopy(self.workouts[selected_name])
             return True
@@ -207,6 +212,57 @@ class User:
     def change_data(self, data):
         self.email = data[0]
 
+    def save_workout(self, workout_name: str, exercises: list, extra_break_sec: int):
+        if workout_name == '' or len(exercises) == 0:
+            return
+        # check if workout already exists
+        if workout_name in self.workouts:
+            # update exisitng workout
+            self.workouts[workout_name].extra_break_sec = extra_break_sec
+        else:
+            #create new workout
+            self.workouts[workout_name] = Workout(workout_name,[],extra_break_sec)
+        # update exercise list
+        self.workouts[workout_name].exercises.clear()
+        for i, exe_name in enumerate(exercises, 1):
+            self.workouts[workout_name].exercises.append((exe_name,i))
+
+    def delete_workout(self, workout_name):
+        # Delete workout with given name if present
+        if workout_name in self.workouts:
+            self.workouts.pop(workout_name)
+        else:
+            return
+
+    @staticmethod
+    # validating function for time value entry widgets, check if input is digit or is empty, less character than max
+    def validate_time_input(entry_input, max_num_char):
+        if (entry_input.isdigit() or entry_input == '') and len(entry_input) <= max_num_char:
+            return True
+        else:
+            return False
+
+    @staticmethod
+    # validating function for name entry widgets no more than 20 characters
+    def validate_name_input(entry_input):
+        if len(entry_input) <= 20:
+            return True
+        else:
+            return False
+
+    @staticmethod
+    def get_str_var(str_var):
+        # return int of stringvar or 0 if empty
+        if str_var.get() != '':
+            return int(str_var.get())
+        else:
+            return 0
+
+    def req_workout_update_set(self):
+        self.req_workout_update = True
+
+    def req_workout_update_reset(self):
+        self.req_workout_update = False
 
 
 

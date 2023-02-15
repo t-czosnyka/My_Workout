@@ -1,11 +1,12 @@
 from tkinter import *
 from Menu import Menu
 import tkinter
+from tkinter import messagebox as mb
 
 
 class WorkoutWindow:
 
-    def __init__(self, root, window, DB, user):
+    def __init__(self, root, window, DB, user, selected_worokout_str: str):
         self.root = root # gui window
         self.window = window
         self.DB = DB
@@ -18,10 +19,7 @@ class WorkoutWindow:
 
         # Define variables
         self.workout_name_str = StringVar()
-        self.workout_break_sec_str = StringVar()
 
-        # Initialize variables
-        self.workout_break_sec_str.set('0')
 
         # Create widgets
         self.exe_label = Label(self.window, text="Exercises:", font=("Helvetica", 13))
@@ -30,33 +28,33 @@ class WorkoutWindow:
         self.workout_label = Label(self.window, text="Workout", font=("Helvetica", 16))
         self.workout_label.place(x=10, y=5)
 
-        self.workout_label_name = Entry(self.window, textvariable=self.workout_name_str)
+        # validating function for entry widget
+        val = self.window.register(self.user.validate_name_input)
+
+        self.workout_label_name = Entry(self.window, textvariable=self.workout_name_str, validate='key',
+                                        validatecommand=(val, '%P'))
         self.workout_label_name.place(x=10, y=35)
-
-        self.workout_break_sec_label = Label(self.window, text="Extra break[sec]:")
-        self.workout_break_sec_label.place(x=150, y=180)
-
-        self.workout_break_sec = Entry(self.window, textvariable=self.workout_break_sec_str, width=4)
-        self.workout_break_sec.place(x=153, y=205)
 
         # create list with current workout
         self.curr_workout_list = Listbox(self.window, height=7, selectmode=SINGLE, activestyle='none')
         self.curr_workout_list.place(x=10, y=60)
 
         # create option menu based on user workouts
-        self.workout_menu = Menu(self.user, self.window, 10, 180, self.curr_workout_list)
-        self.workout_menu.create_workout_menu()
+        self.workout_menu = Menu(self.user, self.window, 10, 183, self.curr_workout_list, False)
+        # select previously selected workout after opening new window
+        if selected_worokout_str != '':
+            self.workout_menu.select_workout(selected_worokout_str)
 
-        # save exercise button
-        self.save_btn = Button(self.window, text="Save Workout", command=self.save_workout, state=DISABLED, width=14)
-        self.save_btn.place(x=12, y=212)
+        # save workout button
+        self.save_workout_btn = Button(self.window, text="Save Workout", command=self.save_workout, state=DISABLED, width=14)
+        self.save_workout_btn.place(x=12, y=242)
 
-        # delete exercise button
-        self.delete_btn = Button(self.window, text="Delete Workout", command=self.delete_workout, width=14)
-        self.delete_btn.place(x=12, y=242)
+        # delete workout button
+        self.delete_workout_btn = Button(self.window, text="Delete Workout", command=self.delete_workout, width=14)
+        self.delete_workout_btn.place(x=150, y=242)
 
         # create list with available exercises
-        self.curr_exe_list = Listbox(self.window, height=7, selectmode=SINGLE, activestyle='none')
+        self.curr_exe_list = Listbox(self.window, height=10, selectmode=SINGLE, activestyle='none')
         self.curr_exe_list.place(x=150, y=60)
         for i, exe in enumerate(self.user.exercises, 1):
             self.curr_exe_list.insert(i, exe)
@@ -64,6 +62,7 @@ class WorkoutWindow:
         # write selected name into workout name
         self.workout_menu.select_work_str.trace_variable("w", self.select_workout_name)
         self.select_workout_name()
+        self.workout_name_str.trace("w", self.validate_inputs)
 
         ### Drag and drop ###
         # Configuration of drag and drop events
@@ -83,11 +82,13 @@ class WorkoutWindow:
     def select_workout_name(self,*args):
         # if workout selected from menu write name into variable
         self.workout_name_str.set(self.workout_menu.select_work_str.get())
+        self.validate_inputs()
 
     def on_closing(self):
         # unhide gui window on closing
         self.window.destroy()
         self.root.deiconify()
+
 
     def drag_exe(self, *args):
         # drag exercise from curr exe list
@@ -151,6 +152,7 @@ class WorkoutWindow:
         # clear dragged exercise and selection marker
         self.dragged_exe = None
         self.allow_workout_list_selection = False
+        self.validate_inputs()
 
     def remove_exe(self, *args):
         # remove exercise from curr workout list by double click
@@ -163,6 +165,7 @@ class WorkoutWindow:
         if args[0].y > self.row_low_border_pos(self.curr_workout_list,index):
             return
         self.curr_workout_list.delete(index)
+        self.validate_inputs()
 
     @staticmethod
     def row_low_border_pos(listbox: Listbox, index):
@@ -183,11 +186,58 @@ class WorkoutWindow:
             inside = False
         return inside
 
+    def validate_inputs(self, *args):
+        # check if workout name and exercise list are not empty
+        if len(self.workout_name_str.get()) > 0 and self.curr_workout_list.size() > 0:
+            self.save_workout_btn.configure(state=NORMAL)
+            return True
+        else:
+            self.save_workout_btn.configure(state=DISABLED)
+            return False
+
 
     def save_workout(self):
-        pass
+        # Edit or create new workout in DB and user data
+        if not self.validate_inputs():
+            return
+        exercises = list(self.curr_workout_list.get(0,END))
+        # Call DB function to add workout
+        res, error = self.DB.save_workout(self.user.name, self.workout_name_str.get(), exercises,
+                                          self.user.get_str_var(self.workout_menu.workout_break_sec_str))
+        if not res:
+            # Display message
+            mb.showerror("Database Error.", error)
+            return
+        self.user.save_workout(self.workout_name_str.get(), exercises,
+                               self.user.get_str_var(self.workout_menu.workout_break_sec_str))
+        self.user.req_workout_update_set()
+        self.workout_menu.select_workout(self.workout_name_str.get())
+        self.workout_menu.update_menu()
+        # Display message
+        mb.showinfo('Success', 'Workout saved.')
+
+
 
     def delete_workout(self):
-        pass
+        workout_name = self.workout_name_str.get()
+        if len(workout_name) == 0:
+            mb.showerror("Error.", "Workout name cannot be empty.")
+            return
+        # delete from DB
+        res, error = self.DB.delete_workout(self.user.name, workout_name)
+        # check if deleted correctly if not return
+        if not res:
+            # Display message
+            mb.showerror("Database Error.", error)
+            return
+        # deleted workout from user data
+        self.user.delete_workout(workout_name)
+        # delete current name from select menu
+        self.workout_menu.select_work_str.set('')
+        self.user.req_workout_update_set()
+        self.workout_menu.update_menu()
+        # Display message
+        mb.showinfo('Success', 'Workout deleted.')
+
 
 

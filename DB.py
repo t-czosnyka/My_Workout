@@ -63,9 +63,9 @@ class DB:
         self.save_exercise('test', 'no_work', 20, 10, 5, 5)
         self.save_exercise('test2', 'test2_exe', 8, 4, 1, 3)
         self.save_exercise('test2', 'test2_exe2', 6, 2, 2, 2)
-        self.add_workout('test', 'test_workout', ['test_exe','test_exe2'],0)
-        self.add_workout('test', 'test2_workout', ['test_exe2','test_exe'],5)
-        self.add_workout('test2', 'test2_workout', ['test2_exe','test2_exe2'],10)
+        self.save_workout('test', 'test_workout', ['test_exe', 'test_exe2'], 0)
+        self.save_workout('test', 'test2_workout', ['test_exe2', 'test_exe'], 5)
+        self.save_workout('test2', 'test2_workout', ['test2_exe', 'test2_exe2'], 10)
 
     def connect_to_DB(self):
         # connecting to the database, return connection object if succesful, return None if error
@@ -247,7 +247,7 @@ class DB:
         my_db.close()
         return res, error
 
-    def add_workout(self, user_name: str, workout_name: str, exercises: list, extra_break_sec: int):
+    def save_workout(self, user_name: str, workout_name: str, exercises: list, extra_break_sec: int):
         # add or update existing workout in DB, clear existing exercises in work_exe table to preserve order nums
         my_db = self.connect_to_DB()
         if not my_db:
@@ -263,7 +263,8 @@ class DB:
         # add workout into work_users table
         try:
             mycursor.execute(f"INSERT INTO work_users (user_id, name, extra_break_sec) \
-            VALUES ({user_id},'{workout_name}',{extra_break_sec}) ON DUPLICATE KEY UPDATE work_id = work_id ")
+            VALUES ({user_id},'{workout_name}',{extra_break_sec})\
+            ON DUPLICATE KEY UPDATE extra_break_sec = {extra_break_sec} ")
         except mysql.connector.Error as err:
             print(err)
             return False, 'Failed to create workout.'
@@ -271,7 +272,7 @@ class DB:
         my_db.commit()
         mycursor.execute(f"SELECT work_id FROM work_users WHERE name = '{workout_name}' AND user_id = '{user_id}'")
         work_id = mycursor.fetchall()[0][0]
-        # clear work exe_table
+        # clear work exe_table to preserve correct order
         mycursor.execute(f"DELETE FROM work_exes WHERE work_id ='{work_id}'")
         my_db.commit()
         # add exercises into work_exes table
@@ -286,6 +287,37 @@ class DB:
                 return False, 'Failed to add exercise.'
         my_db.commit()
         my_db.close()
+        return True, ''
+
+    def delete_workout(self, user_name, workout_name):
+        # delete workout from DB
+        error = ''
+        # Connect to DB, if connection fails return False + error message
+        my_db = self.connect_to_DB()
+        if not my_db:
+            return False, error
+        mycursor = my_db.cursor()
+        res = False
+        # Check if workout with given name exists in database
+        mycursor.execute(f"SELECT * FROM work_users \
+                          WHERE user_id = (SELECT user_id FROM users WHERE name='{user_name}')\
+                          AND name='{workout_name}'")
+        workouts = mycursor.fetchall()
+        # return error message if exercise is not found
+        if len(workouts) == 0:
+            return False, 'Workout not found.'
+        # If workout exists - delete from database, if query fails return False and error message
+        try:
+            mycursor.execute(f"DELETE FROM work_users  \
+                              WHERE user_id = (SELECT user_id FROM users WHERE name='{user_name}')\
+                              AND name='{workout_name}'")
+            my_db.commit()
+        except mysql.connector.Error as err:
+            error = err
+        else:
+            res = True
+        my_db.close()
+        return res, error
 
     def add_user(self, user_name: str, email: str, password: str):
         # create new user in database
