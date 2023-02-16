@@ -2,12 +2,11 @@ import copy
 
 from User import User
 from tkinter import *
-from Exercise import Exercise
 from tkinter import messagebox as mb
-from DB import DB
 from UserWindow import EditUserWindow
 from WorkoutWindow import WorkoutWindow
 from Menu import Menu
+from winsound import *
 
 
 class Gui:
@@ -214,7 +213,7 @@ class Gui:
 
 
     def cont_update(self):
-        # continuous update function
+        # continuous update function runs every 0.1s
         # run exercise timer
         self.user.run_exe()
         # run workout
@@ -272,11 +271,16 @@ class Gui:
             self.curr_workout_exe_list.configure(state=NORMAL)
             self.edit_workout_btn.configure(state=NORMAL)
 
-        # refresh workout after changes
+        # refresh workout list after changes
         if self.user.req_workout_update:
             self.workout_menu.select_work_str.set('')
             self.workout_menu.update_menu()
             self.user.req_workout_update_reset()
+
+        # play sound if requested by user
+        if self.user.req_play_sound:
+            PlaySound('bell.wav', SND_FILENAME | SND_ASYNC)
+            self.user.req_play_sound_reset()
 
         # recall again every 0.1s
         self.frame.after(100, self.cont_update)

@@ -29,10 +29,10 @@ class User:
         self.curr_workout_started = False
         self.curr_workout_finished = False
         self.curr_workout_break = False
+        # Interface to Gui
         self.req_workout_update = False
-        # Time data
-        self.work_time_passed = 0
-        self.break_time_passed = 0
+        self.req_play_sound = False
+
 
     def start_timer(self):
         # start timer
@@ -67,10 +67,13 @@ class User:
         elif not self.exe_work_finish and self.curr_exe.worktime_sec > 0:
             self.curr_exe_mode = 'Work'
             # Start timer
+            if not self.my_timer.timer_started:
+                self.req_play_sound = True
             if self.my_timer.countdown_timer(self.curr_exe.worktime_sec, self.exe_running, True):
                 # Timer finished
                 self.exe_work_finish = True
                 self.my_timer.reset()
+                self.req_play_sound = True
         # Break Mode
         else:
             self.curr_exe_mode = 'Break'
@@ -269,6 +272,9 @@ class User:
 
     def req_workout_update_reset(self):
         self.req_workout_update = False
+
+    def req_play_sound_reset(self):
+        self.req_play_sound = False
 
 
 
