@@ -26,6 +26,9 @@ class Gui:
         self.timer_value_str = StringVar()
         self.round_num_int = IntVar()
         self.color_str = StringVar()
+        self.total_time_passed_str = StringVar()
+        self.work_time_passed_str = StringVar()
+        self.break_time_passed_str = StringVar()
 
         # Entry widget variables:
         self.work_time_min_str = StringVar()
@@ -42,6 +45,9 @@ class Gui:
 
         # Initialize tkinter variables
         self.timer_value_str.set("00:00:00")
+        self.total_time_passed_str.set("00:00:00")
+        self.work_time_passed_str.set("00:00:00")
+        self.break_time_passed_str.set("00:00:00")
         self.round_num_int.set(0)
         self.curr_mode_str.set("Ready")
         self.color_str.set("Green")
@@ -53,7 +59,6 @@ class Gui:
         self.delay_time_sec_str.set('0')
         self.user_name_str.set(f'{self.user.name}')
         self.workout_extra_break_sec_str.set('0')
-
 
         ### User ###
         # Show user_name
@@ -87,6 +92,25 @@ class Gui:
 
         self.reset_btn = Button(self.frame, text="Reset", command=self.reset_exercise, width=20, height=2)
         self.reset_btn.grid(row=2, column=2, columnspan=2)
+
+        # time passed
+        self.total_time_passed_label = Label(self.frame, text="Total time:", font=("Helvetica", 10))
+        self.total_time_passed_label.place(x=20, y=460)
+        self.total_time_passed = Label(self.frame, textvariable=self.total_time_passed_str,font=("Helvetica", 10))
+        self.total_time_passed.place(x=120, y=460)
+
+        self.work_time_passed_label = Label(self.frame, text="Total work time:", font=("Helvetica", 10))
+        self.work_time_passed_label.place(x=20, y=485)
+        self.work_time_passed = Label(self.frame, textvariable=self.work_time_passed_str,font=("Helvetica", 10))
+        self.work_time_passed.place(x=120, y=485)
+
+        self.break_time_passed_label = Label(self.frame, text="Total break time:", font=("Helvetica", 10))
+        self.break_time_passed_label.place(x=20, y=510)
+        self.break_time_passed = Label(self.frame, textvariable=self.break_time_passed_str,font=("Helvetica", 10))
+        self.break_time_passed.place(x=120, y=510)
+
+
+
 
         ### Exercises ###
         # Create workout/exercise widgets
@@ -212,10 +236,13 @@ class Gui:
                     self.pause_timer()
                     self.workout_menu.select_workout(self.user.curr_workout.name)
                 else:
-                    self.user.start_run()
+                    self.user.start_timer()
 
         # update timer values and colors
-        self.timer_value_str.set(self.user.my_timer.time_str)
+        self.timer_value_str.set(self.user.my_timer.active_time_str)
+        self.total_time_passed_str.set(self.user.my_timer.total_time_passed_str)
+        self.work_time_passed_str.set(self.user.my_timer.work_time_passed_str)
+        self.break_time_passed_str.set(self.user.my_timer.break_time_passed_str)
         self.round_num_int.set(self.user.curr_exe_round)
         self.curr_mode_str.set(self.user.curr_exe_mode)
         if self.user.curr_exe.name != '':
@@ -254,8 +281,9 @@ class Gui:
         # recall again every 0.1s
         self.frame.after(100, self.cont_update)
 
+
     def start_timer(self):
-        self.user.start_run()
+        self.user.start_timer()
         self.start_btn.configure(text="Pause", command=self.pause_timer)
 
     def start_workout(self):
@@ -267,7 +295,7 @@ class Gui:
             self.select_exercise(self.user.curr_exe.name)
 
     def pause_timer(self):
-        self.user.stop_run()
+        self.user.pause_timer()
         self.start_btn.configure(text="Start", command=self.start_timer)
 
     def reset_exercise(self):
