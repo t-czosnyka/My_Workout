@@ -9,6 +9,8 @@ class Login:
         self.DB = DB
         self.root = root
         self.root.geometry('250x110')
+        # disable resizing
+        self.root.resizable(False, False)
 
         # tkinter variables
         self.password_str = StringVar()

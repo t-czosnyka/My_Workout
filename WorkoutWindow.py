@@ -1,60 +1,61 @@
 from tkinter import *
-from Menu import Menu
+from WorkoutMenu import WorkoutMenu
 import tkinter
 from tkinter import messagebox as mb
 
 
 class WorkoutWindow:
 
-    def __init__(self, root, window, DB, user, selected_worokout_str: str):
-        self.root = root # gui window
-        self.window = window
+    def __init__(self, root, frame, DB, user, selected_workout_str: str):
+        self.root = root  # gui window
+        self.frame = frame
         self.DB = DB
         self.user = user
-        self.window.geometry('300x300')
+        self.frame.geometry('300x300')
+        # disable resizing
+        self.frame.resizable(False, False)
         # show gui window if create user closed
-        self.window.protocol("WM_DELETE_WINDOW", self.on_closing)
+        self.frame.protocol("WM_DELETE_WINDOW", self.on_closing)
         self.dragged_exe = None
         self.allow_workout_list_selection = False
 
         # Define variables
         self.workout_name_str = StringVar()
 
-
         # Create widgets
-        self.exe_label = Label(self.window, text="Exercises:", font=("Helvetica", 13))
+        self.exe_label = Label(self.frame, text="Exercises:", font=("Helvetica", 13))
         self.exe_label.place(x=150, y=30)
 
-        self.workout_label = Label(self.window, text="Workout", font=("Helvetica", 16))
+        self.workout_label = Label(self.frame, text="Workout", font=("Helvetica", 16))
         self.workout_label.place(x=10, y=5)
 
         # validating function for entry widget
-        val = self.window.register(self.user.validate_name_input)
+        val = self.frame.register(self.user.validate_name_input)
 
-        self.workout_label_name = Entry(self.window, textvariable=self.workout_name_str, validate='key',
+        self.workout_label_name = Entry(self.frame, textvariable=self.workout_name_str, validate='key',
                                         validatecommand=(val, '%P'))
         self.workout_label_name.place(x=10, y=35)
 
         # create list with current workout
-        self.curr_workout_list = Listbox(self.window, height=7, selectmode=SINGLE, activestyle='none')
+        self.curr_workout_list = Listbox(self.frame, height=7, selectmode=SINGLE, activestyle='none')
         self.curr_workout_list.place(x=10, y=60)
 
         # create option menu based on user workouts
-        self.workout_menu = Menu(self.user, self.window, 10, 183, self.curr_workout_list, False)
+        self.workout_menu = WorkoutMenu(self.user, self.frame, 10, 183, self.curr_workout_list, False)
         # select previously selected workout after opening new window
-        if selected_worokout_str != '':
-            self.workout_menu.select_workout(selected_worokout_str)
+        if selected_workout_str != '':
+            self.workout_menu.select_workout(selected_workout_str)
 
         # save workout button
-        self.save_workout_btn = Button(self.window, text="Save Workout", command=self.save_workout, state=DISABLED, width=14)
+        self.save_workout_btn = Button(self.frame, text="Save Workout", command=self.save_workout, state=DISABLED, width=14)
         self.save_workout_btn.place(x=12, y=242)
 
         # delete workout button
-        self.delete_workout_btn = Button(self.window, text="Delete Workout", command=self.delete_workout, width=14)
+        self.delete_workout_btn = Button(self.frame, text="Delete Workout", command=self.delete_workout, width=14)
         self.delete_workout_btn.place(x=150, y=242)
 
         # create list with available exercises
-        self.curr_exe_list = Listbox(self.window, height=10, selectmode=SINGLE, activestyle='none')
+        self.curr_exe_list = Listbox(self.frame, height=10, selectmode=SINGLE, activestyle='none')
         self.curr_exe_list.place(x=150, y=60)
         for i, exe in enumerate(self.user.exercises, 1):
             self.curr_exe_list.insert(i, exe)
@@ -72,9 +73,9 @@ class WorkoutWindow:
         self.curr_exe_list.bind('<Leave>', self.allow_highlight)
         # Highlight insertion point in curr workout list
         # when mouse is moved with pressed button and exercise is selected
-        self.window.bind('<B1-Motion>', self.highlight_insertion_exe)
+        self.frame.bind('<B1-Motion>', self.highlight_insertion_exe)
         # Add exercise to curr workout list if button was released inside its borders
-        self.window.bind('<ButtonRelease-1>', self.release_exe)
+        self.frame.bind('<ButtonRelease-1>', self.release_exe)
 
         # Double click to remove exercise form workout list
         self.curr_workout_list.bind('<Double-Button-1>', self.remove_exe)
@@ -86,7 +87,7 @@ class WorkoutWindow:
 
     def on_closing(self):
         # unhide gui window on closing
-        self.window.destroy()
+        self.frame.destroy()
         self.root.deiconify()
 
 
@@ -110,8 +111,8 @@ class WorkoutWindow:
         if self.dragged_exe is None:
             return
         # check if cursor is inside curr_workout_list
-        x = self.window.winfo_pointerx() - self.window.winfo_rootx()
-        y = self.window.winfo_pointery() - self.window.winfo_rooty()
+        x = self.frame.winfo_pointerx() - self.frame.winfo_rootx()
+        y = self.frame.winfo_pointery() - self.frame.winfo_rooty()
         if self.check_cursor_pos(self.curr_workout_list, x, y):
             # cursor inside - insert dragged exercise into curr workout list
             self.drop_exe(y - self.curr_workout_list.winfo_y())

@@ -6,59 +6,59 @@ class UserWindow:
     # parent class for create user window and edit user window
     # creates widgets, checks if inputs are valid
 
-    def __init__(self, root, window, DB):
-        self.root = root # login window
-        self.window = window
+    def __init__(self, root, frame, DB):
+        self.root = root  # login window
+        self.frame = frame
         self.DB = DB
-        self.window.geometry('160x240')
+        self.frame.geometry('160x240')
+        # disable resizing
+        self.frame.resizable(False, False)
         # show login window if create user closed
-        self.window.protocol("WM_DELETE_WINDOW", self.on_closing)
+        self.frame.protocol("WM_DELETE_WINDOW", self.on_closing)
 
-        #Create variables
+        # Create variables
         self.name_str = StringVar()
         self.email_str = StringVar()
         self.password_str = StringVar()
         self.repeat_password_str = StringVar()
 
         # Create widgets
-        self.name_label = Label(self.window, text='Name:')
+        self.name_label = Label(self.frame, text='Name:')
         self.name_label.place(x=10, y=10)
 
-        self.name_entry = Entry(self.window, textvariable=self.name_str, highlightthickness=1)
+        self.name_entry = Entry(self.frame, textvariable=self.name_str, highlightthickness=1)
         self.name_entry.place(x=12, y=32)
 
-        self.email_label = Label(self.window, text='e-mail:')
+        self.email_label = Label(self.frame, text='e-mail:')
         self.email_label.place(x=10, y=55)
 
-        self.email_entry = Entry(self.window, textvariable=self.email_str, highlightthickness=1)
+        self.email_entry = Entry(self.frame, textvariable=self.email_str, highlightthickness=1)
         self.email_entry.place(x=12, y=77)
 
-        self.password_label = Label(self.window, text='Password:')
+        self.password_label = Label(self.frame, text='Password:')
         self.password_label.place(x=10, y=100)
 
-        self.password_entry = Entry(self.window, textvariable=self.password_str, show='*', highlightthickness=1)
+        self.password_entry = Entry(self.frame, textvariable=self.password_str, show='*', highlightthickness=1)
         self.password_entry.place(x=12, y=122)
 
-        self.repeat_password_label = Label(self.window, text='Repeat Password:')
+        self.repeat_password_label = Label(self.frame, text='Repeat Password:')
         self.repeat_password_label.place(x=10, y=145)
 
-        self.repeat_password_entry = Entry(self.window, textvariable=self.repeat_password_str, show='*',
+        self.repeat_password_entry = Entry(self.frame, textvariable=self.repeat_password_str, show='*',
                                            highlightthickness=1)
         self.repeat_password_entry.place(x=12, y=167)
 
         # check validity of inputs after character is entered
         self.name_str.trace("w", self.is_name_valid)
         self.email_str.trace("w", self.is_email_valid)
-        self.password_str.trace("w", lambda x,y,z: self.is_password_valid(self.password_str,
+        self.password_str.trace("w", lambda x, y, z: self.is_password_valid(self.password_str,
                                 self.password_entry))
-        self.repeat_password_str.trace("w", lambda x,y,z: self.is_password_valid(self.repeat_password_str,
-                                        self.repeat_password_entry))
-
-
+        self.repeat_password_str.trace("w", lambda x, y, z: self.is_password_valid(self.repeat_password_str,
+                                                                                   self.repeat_password_entry))
 
     def on_closing(self):
         # unhide login window on closing
-        self.window.destroy()
+        self.frame.destroy()
         self.root.deiconify()
 
     def is_name_valid(self, *args):
@@ -99,18 +99,18 @@ class UserWindow:
     @staticmethod
     def is_password_valid(str_var, widget, *args):
         # check if password is valid: between 3-40 characters, no spaces, contains at least one number and one letter
-        passw = str_var.get()
+        password = str_var.get()
         num, let = False, False
         # check for presence of one letter and one number
-        for p in passw:
+        for p in password:
             if p.isdecimal():
                 num = True
             if p.isalpha():
                 let = True
             if num and let:
                 break
-        # check other condtions
-        if len(passw) < 4 or len(passw) > 40 or ' ' in passw or not num or not let:
+        # check other conditions
+        if len(password) < 4 or len(password) > 40 or ' ' in password or not num or not let:
             # input incorrect highlight red and return
             widget.configure(highlightbackground="red", highlightcolor="red")
             return False
@@ -119,18 +119,19 @@ class UserWindow:
             widget.configure(highlightbackground="light grey", highlightcolor="light grey")
             return True
 
+
 class CreateUserWindow(UserWindow):
-    # Creating new user window class allowing to create new user withou loggin in
-    def __init__(self, root, window, DB):
+    # Class creating window allowing to create new user before logging in
+    def __init__(self, root, frame, DB):
         # call init of parent class
-        super().__init__(root,window, DB)
+        super().__init__(root, frame, DB)
         # Add create user button
-        self.create_user_btn = Button(self.window, text="Create User", command=self.create_user, width = 12)
+        self.create_user_btn = Button(self.frame, text="Create User", command=self.create_user, width=12)
         self.create_user_btn.place(x=30, y=200)
 
     def create_user(self):
         # button function, rechecks all inputs, shows message if they are incorrect,
-        # checks if password and reppeat password are the same
+        # checks if password and repeat password are the same
         # calls DB function to add user
         if not (self.is_name_valid() and self.is_email_valid() and
                 self.is_password_valid(self.password_str, self.password_entry) and
@@ -150,21 +151,20 @@ class CreateUserWindow(UserWindow):
 
 
 class EditUserWindow(UserWindow):
-    # Editing window class which allows to change parameters of currently logged in user
-    def __init__(self, root, window, DB, user):
+    # Class creating window allowing to edit currently logged-in user
+    def __init__(self, root, frame, DB, user):
         # call init of parent class
-        super().__init__(root,window, DB)
+        super().__init__(root, frame, DB)
         # add edit button
-        self.create_user_btn = Button(self.window, text="Save Data", command=lambda: self.edit_user(user), width = 12)
+        self.create_user_btn = Button(self.frame, text="Save Data", command=lambda: self.edit_user(user), width=12)
         self.create_user_btn.place(x=30, y=200)
 
-        # set user name to current user and disable editing
+        # set username to current user and disable editing
         self.name_str.set(user.name)
         self.name_entry.configure(state=DISABLED)
 
         # insert current email into email field
         self.email_str.set(user.email)
-
 
     def edit_user(self, user):
         # button function, rechecks all inputs, shows message if they are incorrect,
@@ -182,10 +182,8 @@ class EditUserWindow(UserWindow):
         res, error = self.DB.edit_user(self.name_str.get(), self.email_str.get(), self.password_str.get())
         if res:
             mb.showinfo('Success', 'Data successfully edited.')
-            self.window.destroy()
+            self.frame.destroy()
             self.root.deiconify()
             user.change_data([self.email_str.get()])
         else:
             mb.showerror('Error', 'Database Error:' + error)
-
-

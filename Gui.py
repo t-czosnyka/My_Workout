@@ -5,7 +5,7 @@ from tkinter import *
 from tkinter import messagebox as mb
 from UserWindow import EditUserWindow
 from WorkoutWindow import WorkoutWindow
-from Menu import Menu
+from WorkoutMenu import WorkoutMenu
 from winsound import *
 
 
@@ -15,7 +15,9 @@ class Gui:
         self.DB = DB
         self.root = root
         self.frame = frame
-        self.frame.geometry('500x600')
+        self.frame.geometry('500x550')
+        # disable resizing
+        self.frame.resizable(False, False)
         # when frame is closed - close hidden root
         self.frame.protocol("WM_DELETE_WINDOW", self.on_closing)
         self.user = user
@@ -61,21 +63,29 @@ class Gui:
 
         ### User ###
         # Show user_name
-        self.user_name_text = Label(self.frame, textvariable=self.user_name_str, font=("Helvetica", 10))
-        self.user_name_text.place(x=10, y=10)
+        self.user_name_text = Label(self.frame, textvariable=self.user_name_str, font=("Helvetica", 10),
+                                    relief="sunken", width=12, anchor=W)
+        self.user_name_text.place(x=10, y=20)
 
-        # logout button
-        self.logout_btn = Button(self.frame, text="Logout", command=self.log_out)
-        self.logout_btn.place(x=10, y=35)
+        # Create Menu bar for user options
+        # create a menubar
+        menubar = Menu(self.frame)
+        self.frame.config(menu=menubar)
+        # create a menu
+        self.user_menu = Menu(menubar, tearoff=0)
+        self.help_menu = Menu(menubar, tearoff=0)
 
-        # Delete user button
-        self.delete_user_btn = Button(self.frame, text="Delete User", command=self.ask_delete_user, width=9)
-        self.delete_user_btn.place(x=65, y=35)
+        # add a menu item to the menu
+        self.user_menu.add_command(label='Logout', command=self.log_out)
+        self.user_menu.add_command(label='Edit User', command=self.call_edit_user_window)
+        self.user_menu.add_command(label='Delete User', command=self.ask_delete_user)
+        self.user_menu.add_command(label='Exit', command=self.root.destroy)
 
-        # Edit User Button
-        self.edit_user_btn = Button(self.frame, text="Edit User",
-                                    command=self.call_edit_user_window, width=9)
-        self.edit_user_btn.place(x=65, y=6)
+        self.help_menu.add_command(label='Help',command=self.root.destroy)
+
+        # add the File menu to the menubar
+        menubar.add_cascade(label="User",menu=self.user_menu)
+        menubar.add_cascade(label="Help",menu=self.help_menu)
 
         ### Timer ###
         # Create timer widgets
@@ -107,9 +117,6 @@ class Gui:
         self.break_time_passed_label.place(x=20, y=510)
         self.break_time_passed = Label(self.frame, textvariable=self.break_time_passed_str,font=("Helvetica", 10))
         self.break_time_passed.place(x=120, y=510)
-
-
-
 
         ### Exercises ###
         # Create workout/exercise widgets
@@ -200,7 +207,7 @@ class Gui:
         self.curr_workout_exe_list.place(x=300, y=279)
 
         # create option menu with user workouts
-        self.workout_menu = Menu(self.user, self.frame, 298, 400, self.curr_workout_exe_list, True)
+        self.workout_menu = WorkoutMenu(self.user, self.frame, 298, 400, self.curr_workout_exe_list, True)
 
         # create workout start button
         self.start_work_btn = Button(self.frame, text='Start Workout', width=14, command=self.start_workout)
@@ -214,28 +221,18 @@ class Gui:
 
     def cont_update(self):
         # continuous update function runs every 0.1s
-        # run exercise timer
-        self.user.run_exe()
-        # run workout
-        self.user.run_workout()
-        if self.user.curr_exe_finished:
-            # single exercise finished
-            if not self.user.curr_workout_started:
-                self.user.reset_exe()
-                self.pause_timer()
-                self.user.update_display()
-            # Exercise finished in workout mode
-            else:
-                # Reset and start next exercise
-                self.select_exercise(self.user.curr_exe.name)
-                self.user.reset_exe()
-                if self.user.curr_workout_finished:
-                    self.user.curr_workout_started = False
-                    self.user.curr_workout_finished = False
-                    self.pause_timer()
-                    self.workout_menu.select_workout(self.user.curr_workout.name)
-                else:
-                    self.user.start_timer()
+        # run main User function to control exercises and workouts
+        self.user.main_run()
+        # update display based on user
+        # work is finished -> stop the timer, change pause button to star, and reset request
+        if self.user.req_finish_to_gui:
+            self.stop_timer()
+            self.user.req_finish_to_gui_reset()
+
+        # next exercise request -> load exercise data into display widgets
+        if self.user.req_select_next_exe:
+            self.select_exercise(self.user.curr_exe.name)
+            self.user.req_select_next_exe_reset()
 
         # update timer values and colors
         self.timer_value_str.set(self.user.my_timer.active_time_str)
@@ -287,8 +284,8 @@ class Gui:
 
 
     def start_timer(self):
-        self.user.start_timer()
-        self.start_btn.configure(text="Pause", command=self.pause_timer)
+        self.user.start_exercise()
+        self.start_btn.configure(text="Pause", command=self.stop_timer)
 
     def start_workout(self):
         # start workout button function
@@ -298,12 +295,12 @@ class Gui:
             # load current exercise from workout into entry widgets
             self.select_exercise(self.user.curr_exe.name)
 
-    def pause_timer(self):
-        self.user.pause_timer()
+    def stop_timer(self):
+        self.user.stop_exercise()
         self.start_btn.configure(text="Start", command=self.start_timer)
 
     def reset_exercise(self):
-        self.pause_timer()
+        self.stop_timer()
         self.user.reset_exe()
         self.user.reset_workout()
         self.workout_menu.select_workout(self.user.curr_workout.name)

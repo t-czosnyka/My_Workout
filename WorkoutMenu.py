@@ -1,6 +1,6 @@
 from User import User
 from tkinter import *
-class Menu:
+class WorkoutMenu:
     # class creates select workout menu based on user workouts, writes selected workout data into widgets
     def __init__(self, user: User, frame, pos_x: int, pos_y:int, curr_workout_list, disable_break_entry: bool):
         self.user = user
