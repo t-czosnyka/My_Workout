@@ -48,8 +48,7 @@ class WorkoutMenu:
             self.curr_workout_list.delete(0, END)
             self.select_work_str.set('')
 
-
-        self.select_workout_menu.configure(width=11)
+        self.select_workout_menu.configure(width=11, anchor=W)
         self.select_workout_menu.place(x=self.pos_x, y=self.pos_y + 25)
 
     def update_menu(self):

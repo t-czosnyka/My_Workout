@@ -4,7 +4,7 @@ import tkinter
 from tkinter import messagebox as mb
 
 
-class WorkoutWindow:
+class EditWorkoutWindow:
 
     def __init__(self, root, frame, DB, user, selected_workout_str: str):
         self.root = root  # gui window
