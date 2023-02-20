@@ -1,8 +1,11 @@
+import string
+
 import mysql.connector
 from User import User
 from Exercise import Exercise
 from Workout import Workout
-from itertools import groupby
+import hashlib
+import random
 class DB:
     # DB class handles database operations using mysql connector
     def __init__(self):
@@ -31,7 +34,7 @@ class DB:
         mycursor = my_db.cursor()
         # Create tables if they dont exist
         mycursor.execute("CREATE TABLE IF NOT EXISTS users (user_id INT AUTO_INCREMENT PRIMARY KEY,\
-                           name VARCHAR(40), email VARCHAR(40), password VARCHAR(40),\
+                           name VARCHAR(40), email VARCHAR(40), password_hash VARCHAR(64), salt VARCHAR(64),\
                          UNIQUE(name))")
 
         mycursor.execute("CREATE TABLE IF NOT EXISTS exercises (exe_id INT AUTO_INCREMENT PRIMARY KEY, user_id INT,\
@@ -47,22 +50,19 @@ class DB:
                          FOREIGN KEY (work_id) REFERENCES work_users(work_id) ON DELETE CASCADE,\
                          FOREIGN KEY (exe_id) REFERENCES exercises(exe_id) ON DELETE CASCADE,\
                          PRIMARY KEY(work_id, exe_id, order_num))")
-        # Create test user if doesnt exist
-        mycursor.execute("INSERT INTO users (name, email, password) VALUES('test','test@test.com','t1234')\
-                         ON DUPLICATE KEY UPDATE user_id = user_id")
-
-        mycursor.execute("INSERT INTO users (name, email, password) VALUES('test2','test@test.com','1234')\
-                                 ON DUPLICATE KEY UPDATE user_id = user_id")
-
         my_db.commit()
         my_db.close()
 
+        # Create test users
+        self.add_user('test', 'test@test.com', 't1234')
+        self.add_user('test2', 'test@test.com', '1234')
         # Create test exercises
         self.save_exercise('test', 'test_exe', 10, 5, 2, 5)
         self.save_exercise('test', 'test_exe2', 9, 4, 1, 4)
         self.save_exercise('test', 'no_work', 20, 10, 5, 5)
         self.save_exercise('test2', 'test2_exe', 8, 4, 1, 3)
         self.save_exercise('test2', 'test2_exe2', 6, 2, 2, 2)
+        # Create test workout
         self.save_workout('test', 'test_workout', ['test_exe', 'test_exe2'], 0)
         self.save_workout('test', 'test2_workout', ['test_exe2', 'test_exe'], 5)
         self.save_workout('test2', 'test2_workout', ['test2_exe', 'test2_exe2'], 10)
@@ -99,10 +99,14 @@ class DB:
                 login_found = True
         # if login is in DB compare password
         if login_found:
-            # get password from DB
-            mycursor.execute(f"SELECT password FROM users WHERE name = '{in_login}'")
-            password = mycursor.fetchall()
-            valid = password[0][0] == in_password
+            # get saved password hash and salt from DB
+            mycursor.execute(f"SELECT password_hash, salt FROM users WHERE name = '{in_login}'")
+            user_pass = mycursor.fetchall()
+            saved_password_hash = user_pass[0][0]
+            salt = user_pass[0][1]
+            input_password_hash = self.generate_hash_password_with_salt(in_password, salt)
+            # compare saved password hash with hash generated with input password
+            valid = saved_password_hash == input_password_hash
         my_db.close()
         return valid
 
@@ -336,7 +340,11 @@ class DB:
         if len(user) == 1:
             return False, 'User with that name already exists.'
         # if name is not taken -> add user
-        mycursor.execute(f"INSERT INTO users (name, email, password) VALUES('{user_name}','{email}','{password}')")
+        #hash password
+        password_hash, salt = self.generate_new_hash_password(password)
+        # save user_name, email, password_hash and salt into DB
+        mycursor.execute(f"INSERT INTO users (name, email, password_hash, salt) "
+                         f"VALUES('{user_name}','{email}','{password_hash}','{salt}')")
         my_db.commit()
         my_db.close()
         return True, ''
@@ -354,10 +362,28 @@ class DB:
         # return if no user with this name found
         if len(user) == 0:
             return False, 'User not found.'
-        mycursor.execute(f"UPDATE users SET email = '{email}', password ='{password}' WHERE name = '{user_name}'")
+        # generate password hash for new password
+        password_hash, salt = self.generate_new_hash_password(password)
+        # update data in DB
+        mycursor.execute(f"UPDATE users SET email = '{email}', password_hash = '{password_hash}', salt = '{salt}'\
+                           WHERE name = '{user_name}'")
         my_db.commit()
         my_db.close()
         return True, ''
+    @staticmethod
+    def generate_new_hash_password(password: str):
+        # generate hash of given password using SHA-256 from hashlib, generate new salt
+        # generate random 16 char salt
+        salt = ''.join(random.choices(string.ascii_letters+string.digits,k=16))
+        # create salt+password hash using SHA-256 hashing function
+        password_hash = hashlib.sha256(salt.encode() + password.encode()).hexdigest()
+        return password_hash, salt
+
+    @staticmethod
+    def generate_hash_password_with_salt(password: str, salt: str):
+        # generate hash from password with given salt
+        return hashlib.sha256(salt.encode() + password.encode()).hexdigest()
+
 
 
 

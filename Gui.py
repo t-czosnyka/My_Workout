@@ -128,19 +128,19 @@ class Gui:
         self.workout_label.grid(row=3, column=2, columnspan=2, pady=(10, 0))
 
         self.exe_name_label = Label(self.frame, text="Exercise name:", font=("Helvetica", 10))
-        self.exe_name_label.grid(row=4, column=0, sticky='w', padx=(20, 0))
+        self.exe_name_label.place(x=20, y=280)
 
-        self.work_time_label = Label(self.frame, text="Work time:[min][sec]", font=("Helvetica", 10))
-        self.work_time_label.grid(row=5, column=0, sticky='w', padx=(20, 0))
+        self.work_time_label = Label(self.frame, text="Work time[min][sec]:", font=("Helvetica", 10))
+        self.work_time_label.place(x=20, y=302)
 
-        self.break_time_label = Label(self.frame, text="Break time:[min][sec]", font=("Helvetica", 10))
-        self.break_time_label.grid(row=6, column=0, sticky='w', padx=(20, 0))
+        self.break_time_label = Label(self.frame, text="Break time[min][sec]:", font=("Helvetica", 10))
+        self.break_time_label.place(x=20, y=324)
 
         self.num_rounds_label = Label(self.frame, text="No. of rounds:", font=("Helvetica", 10))
-        self.num_rounds_label.grid(row=7, column=0, sticky='w', padx=(20, 0))
+        self.num_rounds_label.place(x=20, y=346)
 
-        self.delay_time_label = Label(self.frame, text="Delay time:[sec]", font=("Helvetica", 10))
-        self.delay_time_label.grid(row=8, column=0, sticky='w', padx=(20, 0))
+        self.delay_time_label = Label(self.frame, text="Delay time[sec]:", font=("Helvetica", 10))
+        self.delay_time_label.place(x=20, y=368)
 
         # validating functions for entry widgets
         reg = self.frame.register(lambda x: self.user.validate_time_input(x,2))
