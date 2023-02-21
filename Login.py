@@ -2,6 +2,7 @@ from tkinter import *
 from DB import DB
 from Gui import Gui
 from UserWindow import CreateUserWindow
+from tkinter import messagebox as mb
 
 class Login:
     # class handles login screen and creates Gui and User objects on successful login
@@ -63,13 +64,15 @@ class Login:
 
     def log_on(self, login):
         # Create User and Gui objects with data from DB on successful login
-        # Hide login screen
-        self.root.withdraw()
-        frame = Toplevel()
         user = self.DB.get_user(login)
-        gui = Gui(self.root, frame, user, self.DB)
-        # call continuous update function
-        gui.continuous_update()
+        # If user was successfully created close login window and Create GUI
+        if user is not None:
+            frame = Toplevel()
+            # Hide login screen
+            self.root.withdraw()
+            Gui(self.root, frame, user, self.DB)
+        else:
+            mb.showerror("Error", "Failed to get user data from DB.")
 
     def create_user_window(self):
         # Create a new window
