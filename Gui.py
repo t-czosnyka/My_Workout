@@ -128,19 +128,19 @@ class Gui:
         self.workout_label.grid(row=3, column=2, columnspan=2, pady=(10, 0))
 
         self.exe_name_label = Label(self.frame, text="Exercise name:", font=("Helvetica", 10))
-        self.exe_name_label.place(x=20, y=280)
+        self.exe_name_label.place(x=20, y=278)
 
         self.work_time_label = Label(self.frame, text="Work time[min][sec]:", font=("Helvetica", 10))
-        self.work_time_label.place(x=20, y=302)
+        self.work_time_label.place(x=20, y=300)
 
         self.break_time_label = Label(self.frame, text="Break time[min][sec]:", font=("Helvetica", 10))
-        self.break_time_label.place(x=20, y=324)
+        self.break_time_label.place(x=20, y=322)
 
         self.num_rounds_label = Label(self.frame, text="No. of rounds:", font=("Helvetica", 10))
-        self.num_rounds_label.place(x=20, y=346)
+        self.num_rounds_label.place(x=20, y=344)
 
         self.delay_time_label = Label(self.frame, text="Delay time[sec]:", font=("Helvetica", 10))
-        self.delay_time_label.place(x=20, y=368)
+        self.delay_time_label.place(x=20, y=366)
 
         # validating functions for entry widgets
         reg = self.frame.register(lambda x: self.user.validate_time_input(x,2))
@@ -149,31 +149,31 @@ class Gui:
         self.exercise_name = Entry(self.frame, width=15, validate="key", validatecommand=(reg2, '%P'),
                                    textvariable=self.exercise_name_str)
 
-        self.exercise_name.place(x=150, y=283)
+        self.exercise_name.place(x=150, y=280)
 
 
         self.work_time_min = Entry(self.frame, validate="key", validatecommand=(reg, '%P'), width=5,
                                    textvariable=self.work_time_min_str)
-        self.work_time_min.place(x=150, y=305)
+        self.work_time_min.place(x=150, y=301)
 
         self.work_time_sec = Entry(self.frame, validate="key", validatecommand=(reg, '%P'), width=5,
                                    textvariable=self.work_time_sec_str)
-        self.work_time_sec.place(x=210, y=305)
+        self.work_time_sec.place(x=210, y=301)
 
         self.break_time_min = Entry(self.frame, validate="key", validatecommand=(reg, '%P'), width=5,
                                     textvariable=self.break_time_min_str)
-        self.break_time_min.place(x=150, y=327)
+        self.break_time_min.place(x=150, y=323)
 
         self.break_time_sec = Entry(self.frame, validate="key", validatecommand=(reg, '%P'), width=5,
                                     textvariable=self.break_time_sec_str)
-        self.break_time_sec.place(x=210, y=327)
+        self.break_time_sec.place(x=210, y=323)
 
         self.num_rounds = Entry(self.frame, validate="key", validatecommand=(reg, '%P'), width=5, textvariable=self.num_rounds_str)
-        self.num_rounds.place(x=150, y=349)
+        self.num_rounds.place(x=150, y=345)
 
         self.delay_time_sec = Entry(self.frame, validate="key", validatecommand=(reg, '%P'), width=5,
                                     textvariable=self.delay_time_sec_str)
-        self.delay_time_sec.place(x=150, y=371)
+        self.delay_time_sec.place(x=150, y=367)
 
         # save exercise button
         self.save_exercise_btn = Button(self.frame, text="Save Exercise", command=self.save_exercise, state=DISABLED, width=12)
@@ -181,7 +181,7 @@ class Gui:
 
         # delete exercise button
         self.delete_btn = Button(self.frame, text="Delete Exercise", command=self.delete_exercise, width=12)
-        self.delete_btn.place(x=20,y=428)
+        self.delete_btn.place(x=20,y=427)
 
         # create option menu based on user exercises
         self.create_exercise_menu()
