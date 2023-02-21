@@ -8,3 +8,7 @@ class Workout:
         self.extra_break_sec = extra_break_sec
 
 
+def encode_workout(o: Workout):
+    return {'name': o.name, 'exercises': o.exercises, 'extra_break_sec': o.extra_break_sec}
+
+
