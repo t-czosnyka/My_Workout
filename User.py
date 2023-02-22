@@ -51,7 +51,6 @@ class User:
             # exercise finished in workout mode -> start next exercise
             elif not self.curr_workout_finished:
                 self.req_select_next_exe = True
-                self.start_exercise()
             # workout finished
             else:
                 self.req_workout_finish_to_gui = True

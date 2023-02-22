@@ -243,6 +243,7 @@ class Gui:
         # next exercise request -> load current exercise data into widgets
         if self.user.req_select_next_exe:
             self.select_exercise(self.user.current_exercise.name)
+            self.start_exercise()
             self.user.req_select_next_exe_reset()
 
         # update current exercise name
