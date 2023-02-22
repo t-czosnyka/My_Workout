@@ -451,9 +451,9 @@ class Gui:
 
     def delete_user(self):
         user_name = self.user.name
-        res, error = self.DB.delete_user(user_name)
-        if not res:
-            mb.showinfo('Return', 'Operation failed.')
+        result, error = self.DB.delete_user(user_name)
+        if not result:
+            mb.showerror('Database error.', error)
             return
         self.log_out()
         mb.showinfo('OK', 'User deleted.')
