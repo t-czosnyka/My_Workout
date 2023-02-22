@@ -50,7 +50,11 @@ class Login:
             self.msg_str.set('Database connection error!')
             self.login_btn.configure(state=DISABLED)
             self.create_user_btn.configure(state=DISABLED)
-    def validate(self):
+
+        # call validate function when enter pressed and focus is in password entry widget
+        self.password.bind('<Return>', self.validate)
+
+    def validate(self, *args):
         # validate login and password in the database, show error message if not correct
         if self.DB.validate(self.login_str.get(), self.password_str.get()):
             login = self.login_str.get()
