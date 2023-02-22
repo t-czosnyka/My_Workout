@@ -9,6 +9,9 @@ class Workout:
 
 
 def encode_workout(o: Workout):
-    return {'name': o.name, 'exercises': o.exercises, 'extra_break_sec': o.extra_break_sec}
+    # encode workout data as dict to export
+    # extract exercise names
+    exe_names = [e[0] for e in o.exercises]
+    return {'name': o.name, 'exercises': exe_names, 'extra_break_sec': o.extra_break_sec}
 
 

@@ -1,8 +1,8 @@
 import copy
-
-from Exercise import Exercise
+from Exercise import Exercise, encode_exercise
 from Timer import Timer
-from Workout import Workout
+from Workout import Workout, encode_workout
+
 class User:
 
     def __init__(self, name: str, exercises: dict, workouts: dict, email: str,):
@@ -217,7 +217,7 @@ class User:
             return True
         return False
 
-    def save_exercise(self, inputs):
+    def save_exercise(self, inputs: list):
         # Create or update exercise object based on input from Gui
         name = inputs[0]
         if name in self.exercises:
@@ -250,12 +250,11 @@ class User:
                     workout.exercises[i] = (workout.exercises[i][0], workout.exercises[i][1]-shift)
                 i += 1
 
-
     def change_data(self, data):
         self.email = data[0]
 
     def save_workout(self, workout_name: str, exercises: list, extra_break_sec: int):
-        if workout_name == '' or len(exercises) == 0:
+        if workout_name == '':
             return
         # check if workout already exists
         if workout_name in self.workouts:
@@ -304,6 +303,20 @@ class User:
             return int(str_var.get())
         else:
             return 0
+
+    def encode_exercises(self):
+        # return dictionary with list of all exercises to be written in JSON file
+        data = {'exercises': []}
+        for exe in list(self.exercises.values()):
+            data['exercises'].append(encode_exercise(exe))
+        return data
+
+    def encode_workouts(self):
+        # return dictionary with list of all workouts to be written in JSON file
+        data = {'workouts': []}
+        for work in list(self.workouts.values()):
+            data['workouts'].append(encode_workout(work))
+        return data
 
     def req_workout_update_set(self):
         self.req_workout_update = True

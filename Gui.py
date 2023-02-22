@@ -1,8 +1,7 @@
-import copy
-
+import json
 from User import User
 from tkinter import *
-from tkinter import messagebox as mb
+from tkinter import filedialog, messagebox as mb
 from UserWindow import EditUserWindow
 from EditWorkoutWindow import EditWorkoutWindow
 from WorkoutMenu import WorkoutMenu
@@ -69,34 +68,40 @@ class Gui:
 
         # Create Menu bar for user options
         # create a menubar
-        menubar = Menu(self.frame)
-        self.frame.config(menu=menubar)
+        self.menubar = Menu(self.frame)
+        self.frame.config(menu=self.menubar)
         # create a menu
-        self.user_menu = Menu(menubar, tearoff=0)
-        self.help_menu = Menu(menubar, tearoff=0)
+        self.user_menu = Menu(self.menubar, tearoff=0)
+        self.help_menu = Menu(self.menubar, tearoff=0)
 
         # add a menu item to the menu
         self.user_menu.add_command(label='Logout', command=self.log_out)
         self.user_menu.add_command(label='Edit User', command=self.call_edit_user_window)
         self.user_menu.add_command(label='Delete User', command=self.ask_delete_user)
+        self.user_menu.add_command(label='Import config', command=self.import_config)
+        self.user_menu.add_command(label='Export config', command=self.export_config)
         self.user_menu.add_command(label='Exit', command=self.root.destroy)
 
-        self.help_menu.add_command(label='Help',command=self.root.destroy)
+        self.help_menu.add_command(label='Help', command=self.show_help)
 
         # add the File menu to the menubar
-        menubar.add_cascade(label="User",menu=self.user_menu)
-        menubar.add_cascade(label="Help",menu=self.help_menu)
+        self.menubar.add_cascade(label="User", menu=self.user_menu)
+        self.menubar.add_cascade(label="Help", menu=self.help_menu)
 
         ### Timer ###
         # Create timer widgets
-        self.mode_text = Label(self.frame, textvariable=self.curr_mode_str, font=("Helvetica", 30), fg=self.color_str.get())
+        self.mode_text = Label(self.frame, textvariable=self.curr_mode_str, font=("Helvetica", 30),
+                               fg=self.color_str.get())
         self.mode_text.grid(row=0, column=0, padx=(10, 0), columnspan=4)
-        self.timer_text = Label(self.frame, textvariable=self.timer_value_str, font=("Helvetica", 80), fg=self.color_str.get())
+        self.timer_text = Label(self.frame, textvariable=self.timer_value_str, font=("Helvetica", 80),
+                                fg=self.color_str.get())
         self.timer_text.grid(row=1, column=0, columnspan=3, padx=8)
-        self.round_text = Label(self.frame, textvariable=self.round_num_int, font=("Helvetica", 35), fg=self.color_str.get())
+        self.round_text = Label(self.frame, textvariable=self.round_num_int, font=("Helvetica", 35),
+                                fg=self.color_str.get())
         self.round_text.grid(row=1, column=4, padx=0)
 
-        self.start_btn = Button(self.frame, text="Start", command=self.start_exercise, width=20, height=2, state=DISABLED)
+        self.start_btn = Button(self.frame, text="Start", command=self.start_exercise, width=20, height=2,
+                                state=DISABLED)
         self.start_btn.grid(row=2, column=0, columnspan=2)
 
         self.reset_btn = Button(self.frame, text="Reset", command=self.general_reset, width=20, height=2)
@@ -223,12 +228,14 @@ class Gui:
                                        command=self.skip_exercise, width=14, state=DISABLED)
         self.skip_exercise_btn.place(x=300, y=518)
 
+        # Call continuous update function
+        self.continuous_update()
+
     def continuous_update(self):
         # continuous update function runs every 0.1s to update GUI
         # run main User function to control exercises and workouts
         self.user.main_run()
-        # update display based on user
-
+        # update display based on user requests
         # exercise is finished -> adjust widgets, show message and reset request
         if self.user.req_exercise_finish_to_gui:
             self.pause_exe()
@@ -490,5 +497,73 @@ class Gui:
         self.skip_exercise_btn.configure(state=NORMAL)
 
     def skip_exercise(self):
+        # finish current exercise during workout
         self.user.skip_exercise()
+
+    def import_config(self):
+        # import JSON file with User exercises and workouts
+        # get file location from dialog window
+        location = filedialog.askopenfilename(initialdir="/", title="Choose file to import",
+                                                         filetypes=(("JSON files", "*.json"),))
+        # return if location is empty
+        if location == "":
+            return
+        # read from file
+        try:
+            with open(location, mode="r") as f:
+                data = json.load(f)
+        except json.decoder.JSONDecodeError as e:
+            print("Cant read JSON file.", e)
+            mb.showerror("Error.", "Cant read JSON file. "+e.msg)
+            return
+
+        # save data from file into DB and user data
+        try:
+            # save imported exercises to user and database
+            for exe in data[0]['exercises']:
+                values = list(exe.values())
+                self.user.save_exercise(values)
+                self.DB.save_exercise(self.user.name, *values)
+            # save imported workouts to user and databse
+            for work in data[1]['workouts']:
+                values = list(work.values())
+                exercises = values[1]
+                # check if exercises names are present
+                for e in exercises:
+                    if e not in self.user.exercises:
+                        raise TypeError
+                self.user.save_workout(*values)
+                self.DB.save_workout(self.user.name, *values)
+        except TypeError as e:
+            mb.showerror("Error", "Wrong data format. " + str(e))
+        except KeyError as e:
+            mb.showerror("Error", "Wrong data format. " + str(e))
+        else:
+            mb.showinfo("Info", "Data import successful.")
+        # update exercise and workout menu
+        self.update_exercise_menu()
+        self.workout_menu.update_menu()
+
+
+
+    def export_config(self):
+        # export user exercises and workouts to JSON file
+        location = filedialog.asksaveasfilename(initialdir="/", title="Choose location to export",
+                                                       filetypes=(("JSON files", "*.json"),))
+        exe_data = self.user.encode_exercises()
+        workout_data = self.user.encode_workouts()
+
+        # return if location is empty
+        if location == "":
+            return
+        if not location.__contains__('.json'):
+            location = location+'.json'
+
+        with open(location, mode="w") as f:
+            json.dump([exe_data, workout_data], f)
+
+    @staticmethod
+    def show_help():
+        # show help for this window
+        pass
 

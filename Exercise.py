@@ -14,6 +14,7 @@ class Exercise:
 
 
 def encode_exercise(o: Exercise):
+    # encode exercise data as dict to export
     return {'name': o.name, 'worktime_sec': o.worktime_sec, 'breaktime_sec': o.breaktime_sec,
             'num_round': o.num_rounds, 'delay_sec': o.delay_sec}
 
