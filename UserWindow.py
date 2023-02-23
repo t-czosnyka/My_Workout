@@ -55,6 +55,15 @@ class UserWindow:
                                 self.password_entry))
         self.repeat_password_str.trace("w", lambda x, y, z: self.is_password_valid(self.repeat_password_str,
                                                                                    self.repeat_password_entry))
+        # Create a Menu bar
+        self.menubar = Menu(self.frame)
+        self.frame.config(menu=self.menubar)
+        # Create Menu
+        self.help_menu = Menu(self.menubar, tearoff=0)
+        # Add command
+        self.help_menu.add_command(label="Help", command=self.show_help)
+        # add casacade to menubar
+        self.menubar.add_cascade(label="Help", menu=self.help_menu)
 
     def on_closing(self):
         # unhide login window on closing
@@ -118,6 +127,11 @@ class UserWindow:
             # input correct remove highlight and return
             widget.configure(highlightbackground="light grey", highlightcolor="light grey")
             return True
+
+    @staticmethod
+    def show_help():
+        # show help for this window
+        pass
 
 
 class CreateUserWindow(UserWindow):
@@ -186,4 +200,4 @@ class EditUserWindow(UserWindow):
             self.root.deiconify()
             user.change_data([self.email_str.get()])
         else:
-            mb.showerror('Error', 'Database Error:' + error)
+            mb.showerror('Error', error)

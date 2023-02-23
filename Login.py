@@ -50,7 +50,6 @@ class Login:
             self.msg_str.set('Database connection error!')
             self.login_btn.configure(state=DISABLED)
             self.create_user_btn.configure(state=DISABLED)
-
         # call validate function when enter pressed and focus is in password entry widget
         self.password.bind('<Return>', self.validate)
 
@@ -68,7 +67,7 @@ class Login:
 
     def log_on(self, login):
         # Create User and Gui objects with data from DB on successful login
-        user = self.DB.get_user(login)
+        user, error = self.DB.get_user(login)
         # If user was successfully created close login window and Create GUI
         if user is not None:
             frame = Toplevel()
@@ -76,7 +75,7 @@ class Login:
             self.root.withdraw()
             Gui(self.root, frame, user, self.DB)
         else:
-            mb.showerror("Error", "Failed to get user data from DB.")
+            mb.showerror("User creation error", error)
 
     def create_user_window(self):
         # Create a new window

@@ -80,6 +80,16 @@ class EditWorkoutWindow:
         # Double click to remove exercise form workout list
         self.curr_workout_list.bind('<Double-Button-1>', self.remove_exe)
 
+        # Create help menu
+        # Create menubar
+        self.menubar = Menu(self.frame)
+        self.frame.config(menu=self.menubar)
+        # Create menu
+        self.help_menu = Menu(self.menubar, tearoff=0)
+        # Add command
+        self.help_menu.add_command(label="Help", command=self.show_help)
+        # Add cascacde
+        self.menubar.add_cascade(label="Help", menu=self.help_menu)
     def select_workout_name(self,*args):
         # if workout selected from menu write name into variable
         self.workout_name_str.set(self.workout_menu.select_work_str.get())
@@ -239,6 +249,11 @@ class EditWorkoutWindow:
         self.workout_menu.update_menu()
         # Display message
         mb.showinfo('Success', 'Workout deleted.')
+
+    @staticmethod
+    def show_help():
+        # show help for this window
+        pass
 
 
 
