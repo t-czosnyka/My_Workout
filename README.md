@@ -10,8 +10,10 @@ It uses mysqlconnector and tkiner for GUI.
 
 Features:
 - Multiple users and accounts,
+- Custom workouts and exercises,
 - Exporting/importing workouts and exercises as JSON files,
 - Drag and drop function for editing workouts,
+- Safely stored passwords,
 
 
 Main window: 
@@ -20,13 +22,13 @@ Main window:
 
 Login:
 
-<img src="https://user-images.githubusercontent.com/115980948/221187226-5384900b-3d52-491c-b99a-d36312e8d02f.png" style=" width:200px ; height:100px">
+<img src="https://user-images.githubusercontent.com/115980948/221187226-5384900b-3d52-491c-b99a-d36312e8d02f.png" style=" width:240px ; height:120px">
 
 Edit workout:
 
-<img src="https://user-images.githubusercontent.com/115980948/221187261-5ce6f8b9-22c5-47c4-ac68-6661876d97f6.png" style=" width:200px ; height:200px">
+<img src="https://user-images.githubusercontent.com/115980948/221187261-5ce6f8b9-22c5-47c4-ac68-6661876d97f6.png" style=" width:300px ; height:300px">
 
 Create user:
 
-<img src="https://user-images.githubusercontent.com/115980948/221187242-1b377c94-769c-473b-ba4a-4cca0a97cd1b.png" style=" width:200px ; height:300px">
+<img src="https://user-images.githubusercontent.com/115980948/221187242-1b377c94-769c-473b-ba4a-4cca0a97cd1b.png" style=" width:180px ; height:270px">
 
