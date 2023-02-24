@@ -55,7 +55,8 @@ class Login:
 
     def validate(self, *args):
         # validate login and password in the database, show error message if not correct
-        if self.DB.validate(self.login_str.get(), self.password_str.get()):
+        result, error = self.DB.validate(self.login_str.get(), self.password_str.get())
+        if result:
             login = self.login_str.get()
             self.login_str.set('')
             self.password_str.set('')
@@ -63,7 +64,8 @@ class Login:
             self.msg_str.set('')
         else:
             self.password_str.set('')
-            self.msg_str.set('Wrong login or password.')
+            self.msg_str.set(error)
+            mb.showerror("Login error", error)
 
     def log_on(self, login):
         # Create User and Gui objects with data from DB on successful login

@@ -6,96 +6,87 @@ from Exercise import Exercise
 from Workout import Workout
 import hashlib
 import random
+
 class DB:
     # DB class handles database operations using mysql connector
     def __init__(self):
         self.error = False
         self.error_msg = ''
-        # Connect to mysql server
-        # if False:
-        #     try:
-        #         my_db = mysql.connector.connect(
-        #             host="sql.freedb.tech",
-        #             user="freedb_my_workout_user",
-        #             passwd="Ne8KzVs&2MFsC?r",
-        #             database="freedb_my_workout_db",
-        #             port=3306
-        #         )
-        #     except mysql.connector.Error as err:
-        #         self.error = True
-        #         self.error_msg = err.msg
-        #         return
-        #
-        #     mycursor = my_db.cursor()
-        #     # Create database my_workout_db if not present
-        #     try:
-        #         mycursor.execute("CREATE DATABASE IF NOT EXISTS my_workout_db")
-        #     except mysql.connector.Error as err:
-        #         self.error = True
-        #         self.error_msg = err.msg
-        #     # Close DB connection
-        #     my_db.close()
-        #     # End function if error occurred
-        #     if self.error:
-        #         return
+        result = False
 
-        # Reconnect to my_workout_db, if connection fails end function
-        my_db = self.connect_to_DB()
+        # Connect to my_workout_db, if connection fails end function
+        my_db, error_msg = self.connect_to_DB()
         if not my_db:
             return
 
         mycursor = my_db.cursor()
-        # Create tables if they dont exist
-        try:
-            mycursor.execute("CREATE TABLE IF NOT EXISTS users (user_id INT AUTO_INCREMENT PRIMARY KEY,\
+        # Create users table if it doesnt exist
+        sql = "CREATE TABLE IF NOT EXISTS users (user_id INT AUTO_INCREMENT PRIMARY KEY,\
                                name VARCHAR(40), email VARCHAR(40), password_hash VARCHAR(64), salt VARCHAR(64),\
-                             UNIQUE(name))")
+                             UNIQUE(name))"
+        result, self.error_msg = self.execute_sql(sql, mycursor, my_db, True)
+        if not result:
+            self.error = True
+            return
 
-            mycursor.execute("CREATE TABLE IF NOT EXISTS exercises (exe_id INT AUTO_INCREMENT PRIMARY KEY, user_id INT,\
+        # Create exercises table if it doesnt exist
+        sql = "CREATE TABLE IF NOT EXISTS exercises (exe_id INT AUTO_INCREMENT PRIMARY KEY, user_id INT,\
                               name VARCHAR(40), time_work INT, time_rest INT, num_rounds INT, delay INT,\
-                              UNIQUE(user_id,name), FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE)")
+                              UNIQUE(user_id,name), FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE)"
+        result, self.error_msg = self.execute_sql(sql, mycursor, my_db, True)
+        if not result:
+            self.error = True
+            return
 
-            mycursor.execute("CREATE TABLE IF NOT EXISTS work_users (work_id INT AUTO_INCREMENT PRIMARY KEY, user_id INT,\
+        # Create work_users table if it doesnt exist
+        sql = "CREATE TABLE IF NOT EXISTS work_users (work_id INT AUTO_INCREMENT PRIMARY KEY, user_id INT,\
                               name  VARCHAR(40), extra_break_sec INT DEFAULT 0, UNIQUE(user_id,name),\
-                              FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE)")
+                              FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE)"
+        result, self.error_msg = self.execute_sql(sql, mycursor, my_db, True)
+        if not result:
+            self.error = True
+            return
 
-            mycursor.execute("CREATE TABLE IF NOT EXISTS work_exes (work_id INT, exe_id INT, order_num INT, \
+        # Create work_exes table if it doesnt exist
+        sql = "CREATE TABLE IF NOT EXISTS work_exes (work_id INT, exe_id INT, order_num INT, \
                              UNIQUE(work_id, order_num),\
                              FOREIGN KEY (work_id) REFERENCES work_users(work_id) ON DELETE CASCADE,\
                              FOREIGN KEY (exe_id) REFERENCES exercises(exe_id) ON DELETE CASCADE,\
-                             PRIMARY KEY(work_id, exe_id, order_num))")
-        except mysql.connector.Error as err:
+                             PRIMARY KEY(work_id, exe_id, order_num))"
+        result, self.error_msg = self.execute_sql(sql, mycursor, my_db, True)
+        if not result:
             self.error = True
-            self.error_msg = err.msg
-        # Commit changes and close DB connection
-        my_db.commit()
-        my_db.close()
-        # End function if error occurred
-        if self.error:
             return
 
-        # Create test users
-        self.add_user('test', 'test@test.com', 't1234')
-        self.add_user('test2', 'test@test.com', '1234')
-        # Create test exercises
-        self.save_exercise('test', 'test_exe', 10, 5, 2, 5)
-        self.save_exercise('test', 'test_exe2', 9, 4, 1, 4)
-        self.save_exercise('test', 'no_work', 20, 10, 5, 5)
-        self.save_exercise('test2', 'test2_exe', 8, 4, 1, 3)
-        self.save_exercise('test2', 'test2_exe2', 6, 2, 2, 2)
-        # Create test workout
-        self.save_workout('test', 'test_workout', ['test_exe', 'test_exe2'], 0)
-        self.save_workout('test', 'test2_workout', ['test_exe2', 'test_exe'], 5)
-        self.save_workout('test2', 'test2_workout', ['test2_exe', 'test2_exe2'], 10)
+        # Close db connection
+        my_db.close()
+
+        # # Create test users
+        # self.add_user('test', 'test@test.com', 't1234')
+        # self.add_user('test2', 'test@test.com', '1234')
+        # # Create test exercises
+        # self.save_exercise('test', 'test_exe', 10, 5, 2, 5)
+        # self.save_exercise('test', 'test_exe2', 9, 4, 1, 4)
+        # self.save_exercise('test', 'no_work', 20, 10, 5, 5)
+        # self.save_exercise('test2', 'test2_exe', 8, 4, 1, 3)
+        # self.save_exercise('test2', 'test2_exe2', 6, 2, 2, 2)
+        # # Create test workout
+        # self.save_workout('test', 'test_workout', ['test_exe', 'test_exe2'], 0)
+        # self.save_workout('test', 'test2_workout', ['test_exe2', 'test_exe'], 5)
+        # self.save_workout('test2', 'test2_workout', ['test2_exe', 'test2_exe2'], 10)
 
     @staticmethod
-    def execute_sql(sql: str, mycursor):
+    def execute_sql(sql: str, mycursor, my_db, commit: bool):
         # function to execute mysql statement, handles errors,
         # returns True if operation was successful or False and error message if error occurred
         result = False
         error = ''
         try:
+            # Execute statement
             mycursor.execute(sql)
+            if commit:
+                # Commit changes
+                my_db.commit()
         except mysql.connector.Error as err:
             # if error occurred save error message
             error = err.msg
@@ -104,11 +95,14 @@ class DB:
             result = True
         return result, error
 
-
     def connect_to_DB(self):
-        # connecting to the database, return connection object if successful, return None if error occurred
+        # connecting to remote database, return connection object if successful, return None if error occurred
         try:
             my_db = mysql.connector.connect(
+                # host="localhost",
+                # user="root",
+                # passwd="Batman123",
+                # database="my_workout_db"
                 host="sql.freedb.tech",
                 user="freedb_my_workout_user",
                 passwd="Ne8KzVs&2MFsC?r",
@@ -117,43 +111,52 @@ class DB:
             )
         except mysql.connector.Error as err:
             self.error = True
-            self.error_msg = err.msg
-            return None
+            self.error_msg = "DB Connection error: " + err.msg
+            return None, self.error_msg
         else:
-            return my_db
+            return my_db, ''
 
     def validate(self, in_login, in_password):
         # validate login and password, return True if login and password hash match database
         valid = False
         login_found = False
         # Connect to DB, if connection fails, return False
-        my_db = self.connect_to_DB()
+        my_db, error = self.connect_to_DB()
         if not my_db:
-            return False
+            return valid, error
         mycursor = my_db.cursor()
         # get logins from DB
-        mycursor.execute("SELECT name FROM users")
-        logins = mycursor.fetchall()
-        # compare logins with inserted login
-        for login in logins:
-            if login[0] == in_login:
-                login_found = True
-                break
-        # if login is in DB compare password
-        if login_found:
+        sql = "SELECT name FROM users"
+        result, error = self.execute_sql(sql, mycursor, my_db, False)
+        if result:
+            logins = mycursor.fetchall()
+            # compare logins with inserted login
+            for login in logins:
+                if login[0] == in_login:
+                    login_found = True
+                    break
+            # return error if login is not found
+            if not login_found:
+                return valid, "User not found."
+            # compare password if login is found
             # get saved password hash and salt from DB
-            mycursor.execute(f"SELECT password_hash, salt FROM users WHERE name = '{in_login}'")
-            user_pass = mycursor.fetchall()
-            saved_password_hash = user_pass[0][0]
-            salt = user_pass[0][1]
-            # generate hash of inserted salt + inserted password
-            input_password_hash = self.generate_hash_password_with_salt(in_password, salt)
-            # compare saved password hash with hash generated with input password
-            valid = saved_password_hash == input_password_hash
+            sql = f"SELECT password_hash, salt FROM users WHERE name = '{in_login}'"
+            result, error = self.execute_sql(sql, mycursor, my_db, False)
+            if result:
+                user_pass = mycursor.fetchall()
+                saved_password_hash = user_pass[0][0]
+                salt = user_pass[0][1]
+                # generate hash of inserted salt + inserted password
+                input_password_hash = self.generate_hash_password_with_salt(in_password, salt)
+                # compare saved password hash with hash generated with input password
+                if saved_password_hash == input_password_hash:
+                    valid = True
+                else:
+                    error = "Wrong user or password."
         my_db.close()
-        return valid
+        return valid, error
 
-    def get_user(self,user_name):
+    def get_user(self, user_name):
         # On successful login create and return User object with data from DB
         # Get exercises, end function and return error message if error occurred
         result, exercises, error = self.get_exercises(user_name)
@@ -176,14 +179,14 @@ class DB:
         exercises = {}
         result = False
         # Connect to DB, if connection fails, return empty dict
-        my_db = self.connect_to_DB()
+        my_db, error_msg = self.connect_to_DB()
         if not my_db:
-            return result, exercises, "DB connection error."
+            return result, exercises, error_msg
         # If connection is successful run mysql statement
         mycursor = my_db.cursor()
         sql = f"SELECT name,time_work,time_rest,num_rounds,delay FROM exercises \
                                 WHERE user_id = (SELECT user_id FROM users WHERE name='{user_name}')"
-        result, error = self.execute_sql(sql, mycursor)
+        result, error = self.execute_sql(sql, mycursor, my_db, False)
         if result:
             exes = mycursor.fetchall()
             # create Exercise class objects from fetched data
@@ -198,14 +201,14 @@ class DB:
         # Connect to DB, if connection fails, return false
         email = ''
         result = False
-        my_db = self.connect_to_DB()
+        my_db, error_msg = self.connect_to_DB()
         if not my_db:
-            return result, email, "DB connection error."
+            return result, email, error_msg
         # If connection is successful run mysql statement
         mycursor = my_db.cursor()
         sql = f"SELECT email FROM users \
                                  WHERE name = '{user_name}'"
-        result, error = self.execute_sql(sql, mycursor)
+        result, error = self.execute_sql(sql, mycursor, my_db, False)
         if result:
             email = mycursor.fetchall()[0]
         # Close DB connection
@@ -217,9 +220,9 @@ class DB:
         workouts = {}
         result = False
         # Connect to DB, if connection fails, return empty dict
-        my_db = self.connect_to_DB()
+        my_db, error_msg = self.connect_to_DB()
         if not my_db:
-            return result, workouts, "DB connection error."
+            return result, workouts, error_msg
         # If connection is successful run mysql statement
         # Get workout data from DB - row for each exercise in work_exes for current user
         # Data: (workout name, exercise name, exercise order number, extra break in seconds)
@@ -229,7 +232,7 @@ class DB:
             INNER JOIN work_exes ON work_users.work_id = work_exes.work_id \
             INNER JOIN exercises ON work_exes.exe_id = exercises.exe_id \
             WHERE work_users.user_id =(SELECT user_id FROM users WHERE name = '{user_name}');"
-        result, error = self.execute_sql(sql, mycursor)
+        result, error = self.execute_sql(sql, mycursor, my_db, False)
         if result:
             wr_db = mycursor.fetchall()
             # Create Workout objects in workouts dict
@@ -254,9 +257,9 @@ class DB:
         # save given exercise data into database
         # Connect to DB, if connection fails, return False
         result = False
-        my_db = self.connect_to_DB()
+        my_db, error_msg = self.connect_to_DB()
         if not my_db:
-            return result, 'DB connection error.'
+            return result, error_msg
         # If connection is successful execute statement
         mycursor = my_db.cursor()
         sql = f"INSERT INTO exercises (user_id, name,time_work,time_rest,num_rounds,delay) \
@@ -264,9 +267,8 @@ class DB:
                              '{exe_name}',{worktime_sec},{breaktime_sec},{num_rounds},{delay_sec})\
                              ON DUPLICATE KEY UPDATE time_work={worktime_sec},time_rest={breaktime_sec},\
                              num_rounds={num_rounds},delay={delay_sec}"
-        result, error = self.execute_sql(sql, mycursor)
-        # commit changes and close db connection
-        my_db.commit()
+        result, error = self.execute_sql(sql, mycursor, my_db, True)
+        # Close db connection
         my_db.close()
         return result, error
 
@@ -275,14 +277,14 @@ class DB:
         error = ''
         result = False
         # Connect to DB, if connection fails return False + error message
-        my_db = self.connect_to_DB()
+        my_db, error_msg = self.connect_to_DB()
         if not my_db:
-            return result, 'DB connection error.'
+            return result, error_msg
         mycursor = my_db.cursor()
         # Check if exercise with given name exists in database
         sql = f"SELECT * FROM exercises \
                          WHERE user_id = (SELECT user_id FROM users WHERE name='{user_name}') AND name='{exe_name}'"
-        result, error = self.execute_sql(sql, mycursor)
+        result, error = self.execute_sql(sql, mycursor, my_db, False)
         if result:
             exe = mycursor.fetchall()
             # return error message if exercise is not found
@@ -293,9 +295,8 @@ class DB:
         if result:
             sql = f"DELETE FROM exercises WHERE user_id = (SELECT user_id FROM users WHERE name='{user_name}')" \
                   f" AND name='{exe_name}'"
-            result, error = self.execute_sql(sql, mycursor)
-        # commit changes and close db connection
-        my_db.commit()
+            result, error = self.execute_sql(sql, mycursor, my_db, True)
+        # Close DB connection
         my_db.close()
         return result, error
 
@@ -304,13 +305,13 @@ class DB:
         result = False
         error = ''
         # Connect to DB, if connection fails return False + error message
-        my_db = self.connect_to_DB()
+        my_db, error_msg = self.connect_to_DB()
         if not my_db:
-            return result, 'DB connection error.'
+            return result, error_msg
         # find user with given name in DB
         mycursor = my_db.cursor()
         sql = f"SELECT * FROM users WHERE name = '{user_name}'"
-        result, error = self.execute_sql(sql, mycursor)
+        result, error = self.execute_sql(sql, mycursor, my_db, False)
         if result:
             user = mycursor.fetchall()
             # return False + error message if no user with this name found
@@ -320,9 +321,8 @@ class DB:
         # if user is found execute delete statement
         if result:
             sql = f"DELETE FROM users WHERE name = '{user_name}'"
-            result, error = self.execute_sql(sql, mycursor)
-        # commit changes and close db connection
-        my_db.commit()
+            result, error = self.execute_sql(sql, mycursor, my_db, True)
+        # Close db connection
         my_db.close()
         return result, error
 
@@ -331,14 +331,14 @@ class DB:
         result = False
         user_id = 0
         # Connect to DB, if connection fails return False + error message
-        my_db = self.connect_to_DB()
+        my_db, error_msg = self.connect_to_DB()
         if not my_db:
-            return result, 'DB connection error.'
+            return result, error_msg
 
         # Check if user with given name exists and get user_id
         mycursor = my_db.cursor()
         sql = f"SELECT * FROM users WHERE name = '{user_name}'"
-        result, error = self.execute_sql(sql, mycursor)
+        result, error = self.execute_sql(sql, mycursor, my_db, False)
         if result:
             user = mycursor.fetchall()
             # return if no user with this name found
@@ -353,35 +353,39 @@ class DB:
             sql = f"INSERT INTO work_users (user_id, name, extra_break_sec) \
             VALUES ({user_id},'{workout_name}',{extra_break_sec})\
             ON DUPLICATE KEY UPDATE extra_break_sec = {extra_break_sec} "
-            result, error = self.execute_sql(sql, mycursor)
+            result, error = self.execute_sql(sql, mycursor, my_db, True)
 
         # get added recently added workout id
         if result:
-            my_db.commit()
             workout_added = True
             sql = f"SELECT work_id FROM work_users WHERE name = '{workout_name}' AND user_id = '{user_id}'"
-            result, error = self.execute_sql(sql, mycursor)
+            result, error = self.execute_sql(sql, mycursor, my_db, False)
 
         # clear work exe_table to preserve correct order
         if result:
             work_id = mycursor.fetchall()[0][0]
             sql = f"DELETE FROM work_exes WHERE work_id ='{work_id}'"
-            result, error = self.execute_sql(sql, mycursor)
+            result, error = self.execute_sql(sql, mycursor, my_db, True)
 
         # add exercises names and exercise order numbers - starting from 1, into work_exes table,
         # if error occurs return false and error message
         if result:
-            my_db.commit()
             for order_num, exe_name in enumerate(exercises, 1):
+                # get exercise id
+                sql = f"SELECT exe_id FROM exercises WHERE user_id = {user_id} AND name = '{exe_name}'"
+                result, error = self.execute_sql(sql, mycursor, my_db, False)
+                exe_id = mycursor.fetchall()
+                if not result:
+                    return result, error
+                if len(exe_id) == 0:
+                    return False, f"Exercise {exe_name} not found."
                 sql = f"INSERT INTO work_exes \
                     VALUES((SELECT work_id FROM work_users WHERE user_id = {user_id} AND name = '{workout_name}'),\
-                    (SELECT exe_id FROM exercises WHERE user_id = {user_id} AND name = '{exe_name}'),{order_num})\
-                    ON DUPLICATE KEY UPDATE work_id = work_id"
-                result, error = self.execute_sql(sql, mycursor)
+                    {exe_id[0][0]},{order_num}) ON DUPLICATE KEY UPDATE work_id = work_id"
+                result, error = self.execute_sql(sql, mycursor, my_db, True)
                 if not result:
                     break
-        # commit changes and close db connection
-        my_db.commit()
+        # Close db connection
         my_db.close()
         return result, error
 
@@ -389,14 +393,14 @@ class DB:
         # delete workout from DB
         result = False
         # Connect to DB, if connection fails return False + error message
-        my_db = self.connect_to_DB()
+        my_db, error_msg = self.connect_to_DB()
         if not my_db:
-            return result, 'DB connection error.'
+            return result, error_msg
         # Check if workout with given name exists in database
         mycursor = my_db.cursor()
         sql = f"SELECT * FROM work_users WHERE user_id = (SELECT user_id FROM users WHERE name='{user_name}')\
                           AND name='{workout_name}'"
-        result, error = self.execute_sql(sql, mycursor)
+        result, error = self.execute_sql(sql, mycursor, my_db, False)
         if result:
             workouts = mycursor.fetchall()
             # return error message if exercise is not found
@@ -407,9 +411,8 @@ class DB:
         if result:
             sql = f"DELETE FROM work_users WHERE user_id = (SELECT user_id FROM users WHERE name='{user_name}')\
                               AND name='{workout_name}'"
-            result, error = self.execute_sql(sql, mycursor)
-        # commit changes and close db connection
-        my_db.commit()
+            result, error = self.execute_sql(sql, mycursor, my_db, True)
+        # Close db connection
         my_db.close()
         return result, error
 
@@ -419,19 +422,19 @@ class DB:
         if len(user_name) == 0 or len(email) == 0 or len(password) == 0:
             return result, 'Wrong input data.'
         # Connect to DB, if connection fails return False + error message
-        my_db = self.connect_to_DB()
+        my_db, error_msg = self.connect_to_DB()
         if not my_db:
-            return result, 'DB connection error.'
-        # if connection is ok, check if user with given name already exists
+            return result, error_msg
+        # if connection is ok, check if user with inserted name or email already exists
         mycursor = my_db.cursor()
-        sql = f"SELECT * FROM users WHERE name = '{user_name}'"
-        result, error = self.execute_sql(sql, mycursor)
+        sql = f"SELECT * FROM users WHERE name = '{user_name}' OR email = '{email}'"
+        result, error = self.execute_sql(sql, mycursor, my_db, False)
         if result:
             user = mycursor.fetchall()
-            # return error if no user with this name found
+            # return error if user with this name of email already exists
             if len(user) >= 1:
                 result = False
-                error = 'User with that name already exists.'
+                error = 'User with that name or email already exists.'
         # if name is not taken -> add user
         if result:
             # hash password
@@ -439,9 +442,8 @@ class DB:
             # save user_name, email, password_hash and salt into DB
             sql = f"INSERT INTO users (name, email, password_hash, salt) \
             VALUES('{user_name}','{email}','{password_hash}','{salt}')"
-            result, error = self.execute_sql(sql, mycursor)
-        # commit changes and close db connection
-        my_db.commit()
+            result, error = self.execute_sql(sql, mycursor, my_db, True)
+        # Close db connection
         my_db.close()
         return result, error
 
@@ -449,12 +451,12 @@ class DB:
         # edit already existing user with given data
         result = False
         # Connect to DB, if connection fails return False + error message
-        my_db = self.connect_to_DB()
+        my_db, error_msg = self.connect_to_DB()
         if not my_db:
-            return result, 'DB connection error.'
+            return result, error_msg
         mycursor = my_db.cursor()
         sql = f"SELECT * FROM users WHERE name = '{user_name}'"
-        result, error = self.execute_sql(sql, mycursor)
+        result, error = self.execute_sql(sql, mycursor, False)
         if result:
             user = mycursor.fetchall()
             # return if no user with this name found
@@ -467,9 +469,8 @@ class DB:
             # update data in DB if error occurs return False + error message
             sql = f"UPDATE users SET email = '{email}', password_hash = '{password_hash}', salt = '{salt}'\
                                WHERE name = '{user_name}'"
-            result, error = self.execute_sql(sql, mycursor)
-        # commit changes and close db connection
-        my_db.commit()
+            result, error = self.execute_sql(sql, mycursor, my_db, True)
+        # Close db connection
         my_db.close()
         return result, error
 
