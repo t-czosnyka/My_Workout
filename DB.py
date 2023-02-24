@@ -12,29 +12,32 @@ class DB:
         self.error = False
         self.error_msg = ''
         # Connect to mysql server
-        try:
-            my_db = mysql.connector.connect(
-                host="localhost",
-                user="root",
-                passwd="Batman123"
-            )
-        except mysql.connector.Error as err:
-            self.error = True
-            self.error_msg = err.msg
-            return
-
-        mycursor = my_db.cursor()
-        # Create database my_workout_db if not present
-        try:
-            mycursor.execute("CREATE DATABASE IF NOT EXISTS my_workout_db")
-        except mysql.connector.Error as err:
-            self.error = True
-            self.error_msg = err.msg
-        # Close DB connection
-        my_db.close()
-        # End function if error occurred
-        if self.error:
-            return
+        # if False:
+        #     try:
+        #         my_db = mysql.connector.connect(
+        #             host="sql.freedb.tech",
+        #             user="freedb_my_workout_user",
+        #             passwd="Ne8KzVs&2MFsC?r",
+        #             database="freedb_my_workout_db",
+        #             port=3306
+        #         )
+        #     except mysql.connector.Error as err:
+        #         self.error = True
+        #         self.error_msg = err.msg
+        #         return
+        #
+        #     mycursor = my_db.cursor()
+        #     # Create database my_workout_db if not present
+        #     try:
+        #         mycursor.execute("CREATE DATABASE IF NOT EXISTS my_workout_db")
+        #     except mysql.connector.Error as err:
+        #         self.error = True
+        #         self.error_msg = err.msg
+        #     # Close DB connection
+        #     my_db.close()
+        #     # End function if error occurred
+        #     if self.error:
+        #         return
 
         # Reconnect to my_workout_db, if connection fails end function
         my_db = self.connect_to_DB()
@@ -106,10 +109,11 @@ class DB:
         # connecting to the database, return connection object if successful, return None if error occurred
         try:
             my_db = mysql.connector.connect(
-                host="localhost",
-                user="root",
-                passwd="Batman123",
-                database="my_workout_db"
+                host="sql.freedb.tech",
+                user="freedb_my_workout_user",
+                passwd="Ne8KzVs&2MFsC?r",
+                database="freedb_my_workout_db",
+                port=3306
             )
         except mysql.connector.Error as err:
             self.error = True
