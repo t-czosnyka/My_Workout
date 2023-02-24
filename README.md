@@ -14,11 +14,25 @@ Exercises can be grouped in full workouts that automatically start queued exerci
 
 Features:
 - Multiple users and accounts,
-- 
+- Custom workouts and exercises,
 - Exporting/importing workouts and exercises as JSON files,
+- Drag and drop function for editing workouts,
+- Safely stored passwords,
 
 
 Main window: 
 
+<img src="https://user-images.githubusercontent.com/115980948/221185540-efdf3d66-1091-4eee-9d7b-25635cc1d2e3.png" style=" width:360px ; height:400px">
 
-![main](https://user-images.githubusercontent.com/115980948/220869391-ac33950b-5d74-4b6b-bd04-d078e40acd32.png)
+Login:
+
+<img src="https://user-images.githubusercontent.com/115980948/221187226-5384900b-3d52-491c-b99a-d36312e8d02f.png" style=" width:240px ; height:120px">
+
+Edit workout:
+
+<img src="https://user-images.githubusercontent.com/115980948/221187261-5ce6f8b9-22c5-47c4-ac68-6661876d97f6.png" style=" width:300px ; height:300px">
+
+Create user:
+
+<img src="https://user-images.githubusercontent.com/115980948/221187242-1b377c94-769c-473b-ba4a-4cca0a97cd1b.png" style=" width:180px ; height:270px">
+
