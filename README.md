@@ -16,6 +16,5 @@ Features:
 
 Main window: 
 
-<img src="https://user-images.githubusercontent.com/115980948/220869391-ac33950b-5d74-4b6b-bd04-d078e40acd32.png" style=" width:360px ; height:400px">
-
+<img src="https://user-images.githubusercontent.com/115980948/221185540-efdf3d66-1091-4eee-9d7b-25635cc1d2e3.png" style=" width:360px ; height:400px">
 
