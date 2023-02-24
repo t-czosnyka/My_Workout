@@ -15,14 +15,18 @@ Features:
 
 
 Main window: 
+
 <img src="https://user-images.githubusercontent.com/115980948/221185540-efdf3d66-1091-4eee-9d7b-25635cc1d2e3.png" style=" width:360px ; height:400px">
 
 Login:
-<img src="https://user-images.githubusercontent.com/115980948/221187226-5384900b-3d52-491c-b99a-d36312e8d02f.png" style=" width:200px ; height:80px">
+
+<img src="https://user-images.githubusercontent.com/115980948/221187226-5384900b-3d52-491c-b99a-d36312e8d02f.png" style=" width:200px ; height:100px">
 
 Edit workout:
+
 <img src="https://user-images.githubusercontent.com/115980948/221187261-5ce6f8b9-22c5-47c4-ac68-6661876d97f6.png" style=" width:200px ; height:200px">
 
 Create user:
-<img src="https://user-images.githubusercontent.com/115980948/221187242-1b377c94-769c-473b-ba4a-4cca0a97cd1b.png" style=" width:100px ; height:150px">
+
+<img src="https://user-images.githubusercontent.com/115980948/221187242-1b377c94-769c-473b-ba4a-4cca0a97cd1b.png" style=" width:200px ; height:300px">
 
