@@ -1,18 +1,36 @@
 import string
-
 import mysql.connector
 from User import User
 from Exercise import Exercise
 from Workout import Workout
 import hashlib
 import random
+import logging
+from logging.handlers import RotatingFileHandler
+import inspect
+
+# Logging configuration
+# create logger
+logger = logging.getLogger(__name__)
+# set logging level
+logger.setLevel(logging.INFO)
+
+# create formatter - time - logger_name - level - message; timer format year-month-day hour-minute-second
+formatter = logging.Formatter('%(asctime)s:%(name)s:%(levelname)s:%(message)s', "%Y-%m-%d %H:%M:%S")
+
+# create logging file handler
+file_handler = RotatingFileHandler('database.log', maxBytes=2000, backupCount=5)
+file_handler.setFormatter(formatter)
+
+# add file handler to the logger
+logger.addHandler(file_handler)
+
 
 class DB:
     # DB class handles database operations using mysql connector
     def __init__(self):
         self.error = False
         self.error_msg = ''
-        result = False
 
         # Connect to my_workout_db, if connection fails end function
         my_db, error_msg = self.connect_to_DB()
@@ -75,9 +93,32 @@ class DB:
         # self.save_workout('test', 'test2_workout', ['test_exe2', 'test_exe'], 5)
         # self.save_workout('test2', 'test2_workout', ['test2_exe', 'test2_exe2'], 10)
 
+    def connect_to_DB(self):
+        # connecting to remote database, return connection object if successful, return None if error occurred
+        try:
+            my_db = mysql.connector.connect(
+                host="localhost",
+                user="root",
+                passwd="Batman123",
+                database="my_workout_db"
+                # host="sql.freedb.tech",
+                # user="freedb_my_workout_user",
+                # passwd="Ne8KzVs&2MFsC?r",
+                # database="freedb_my_workout_db",
+                # port=3306
+            )
+        except mysql.connector.Error as err:
+            self.error = True
+            self.error_msg = "DB Connection error: " + err.msg
+            # log error
+            logger.error(
+                f"Error while connecting to DB, message: {err.msg}'")
+            return None, self.error_msg
+        else:
+            return my_db, ''
     @staticmethod
     def execute_sql(sql: str, mycursor, my_db, commit: bool):
-        # function to execute mysql statement, handles errors,
+        # function to execute mysql statement with error handling and message logging
         # returns True if operation was successful or False and error message if error occurred
         result = False
         error = ''
@@ -90,31 +131,16 @@ class DB:
         except mysql.connector.Error as err:
             # if error occurred save error message
             error = err.msg
+            # log error
+            # get calling function name
+            calling_function = inspect.stack()[1].function
+            # log error
+            logger.error(
+                f"Error while executing statement: '{sql}', Function: '{calling_function}, message: {error}'")
         else:
             # No error
             result = True
         return result, error
-
-    def connect_to_DB(self):
-        # connecting to remote database, return connection object if successful, return None if error occurred
-        try:
-            my_db = mysql.connector.connect(
-                # host="localhost",
-                # user="root",
-                # passwd="Batman123",
-                # database="my_workout_db"
-                host="sql.freedb.tech",
-                user="freedb_my_workout_user",
-                passwd="Ne8KzVs&2MFsC?r",
-                database="freedb_my_workout_db",
-                port=3306
-            )
-        except mysql.connector.Error as err:
-            self.error = True
-            self.error_msg = "DB Connection error: " + err.msg
-            return None, self.error_msg
-        else:
-            return my_db, ''
 
     def validate(self, in_login, in_password):
         # validate login and password, return True if login and password hash match database
@@ -137,7 +163,9 @@ class DB:
                     break
             # return error if login is not found
             if not login_found:
-                return valid, "User not found."
+                # log warning
+                logger.warning(f"User {in_login} not found.")
+                return valid, f"User {in_login} not found."
             # compare password if login is found
             # get saved password hash and salt from DB
             sql = f"SELECT password_hash, salt FROM users WHERE name = '{in_login}'"
@@ -151,8 +179,12 @@ class DB:
                 # compare saved password hash with hash generated with input password
                 if saved_password_hash == input_password_hash:
                     valid = True
+                    # log information on succesfull log in
+                    logger.info(f"User {in_login} logged in.")
                 else:
-                    error = "Wrong user or password."
+                    # log warning on unsuccesfull log in
+                    logger.warning(f"Wrong password for user {in_login}.")
+                    error = "Wrong password."
         my_db.close()
         return valid, error
 
@@ -268,6 +300,9 @@ class DB:
                              ON DUPLICATE KEY UPDATE time_work={worktime_sec},time_rest={breaktime_sec},\
                              num_rounds={num_rounds},delay={delay_sec}"
         result, error = self.execute_sql(sql, mycursor, my_db, True)
+        # Log information about new exercise
+        if result:
+            logger.info(f"User {user_name} saved exercise {exe_name}.")
         # Close db connection
         my_db.close()
         return result, error
@@ -291,12 +326,83 @@ class DB:
             if len(exe) == 0:
                 result = False
                 error = 'Exercise not found.'
+                logger.warning(f"Exercise {exe_name}, user:{user_name} not found for deleting.")
         # If exercise exists - delete from database, if statement fails return False and error message
         if result:
             sql = f"DELETE FROM exercises WHERE user_id = (SELECT user_id FROM users WHERE name='{user_name}')" \
                   f" AND name='{exe_name}'"
             result, error = self.execute_sql(sql, mycursor, my_db, True)
+        # Log information about deleted exercise
+        if result:
+            logger.info(f"User {user_name} deleted exercise {exe_name}.")
         # Close DB connection
+        my_db.close()
+        return result, error
+
+    def add_user(self, user_name: str, email: str, password: str):
+        # create new user in database
+        result = False
+        if len(user_name) == 0 or len(email) == 0 or len(password) == 0:
+            return result, 'Wrong input data.'
+        # Connect to DB, if connection fails return False + error message
+        my_db, error_msg = self.connect_to_DB()
+        if not my_db:
+            return result, error_msg
+        # if connection is ok, check if user with inserted name or email already exists
+        mycursor = my_db.cursor()
+        sql = f"SELECT * FROM users WHERE name = '{user_name}' OR email = '{email}'"
+        result, error = self.execute_sql(sql, mycursor, my_db, False)
+        if result:
+            user = mycursor.fetchall()
+            # return error if user with this name of email already exists
+            if len(user) >= 1:
+                result = False
+                error = 'User with that name or email already exists.'
+                # Log warning
+                logger.warning(f"User with name {user_name} or email {email} already exists.")
+        # if name is not taken -> add user
+        if result:
+            # hash password
+            password_hash, salt = self.generate_new_hash_password(password)
+            # save user_name, email, password_hash and salt into DB
+            sql = f"INSERT INTO users (name, email, password_hash, salt) \
+               VALUES('{user_name}','{email}','{password_hash}','{salt}')"
+            result, error = self.execute_sql(sql, mycursor, my_db, True)
+        # Log information if user was successfully created
+        if result:
+            logger.info(f"User {user_name} successfully created.")
+        # Close db connection
+        my_db.close()
+        return result, error
+
+    def edit_user(self, user_name, email, password):
+        # edit already existing user with given data
+        result = False
+        # Connect to DB, if connection fails return False + error message
+        my_db, error_msg = self.connect_to_DB()
+        if not my_db:
+            return result, error_msg
+        mycursor = my_db.cursor()
+        sql = f"SELECT * FROM users WHERE name = '{user_name}'"
+        result, error = self.execute_sql(sql, mycursor, my_db, False)
+        if result:
+            user = mycursor.fetchall()
+            # return if no user with this name found
+            if len(user) == 0:
+                result = False
+                error = 'User not found.'
+                logger.warning(f"User {user_name} not found for edit.")
+        # if user is found generate password hash and salt for new password
+        if result:
+            password_hash, salt = self.generate_new_hash_password(password)
+            # update data in DB if error occurs return False + error message
+            sql = f"UPDATE users SET email = '{email}', password_hash = '{password_hash}', salt = '{salt}'\
+                                  WHERE name = '{user_name}'"
+            result, error = self.execute_sql(sql, mycursor, my_db, True)
+        # Log information about data edit
+        if result:
+            logger.info(f"User {user_name} data edited.")
+        # Close db connection
         my_db.close()
         return result, error
 
@@ -318,10 +424,14 @@ class DB:
             if len(user) == 0:
                 result = False
                 error = 'User not found.'
+                logger.warning(f"User:{user_name} not found for deleting.")
         # if user is found execute delete statement
         if result:
             sql = f"DELETE FROM users WHERE name = '{user_name}'"
             result, error = self.execute_sql(sql, mycursor, my_db, True)
+        # Log information about deleted user
+        if result:
+            logger.info(f"User {user_name} deleted.")
         # Close db connection
         my_db.close()
         return result, error
@@ -345,6 +455,7 @@ class DB:
             if len(user) == 0:
                 result = False
                 error = 'User not found.'
+                logger.warning(f"User:{user_name} not found while saving workout.")
             else:
                 user_id = user[0][0]
 
@@ -377,14 +488,20 @@ class DB:
                 exe_id = mycursor.fetchall()
                 if not result:
                     return result, error
+                # if exercise not found in DB return and log error
                 if len(exe_id) == 0:
+                    logger.error(f"Error exercise {exe_name} not found in DB while saving workout.")
                     return False, f"Exercise {exe_name} not found."
+                # add exercise into workout table
                 sql = f"INSERT INTO work_exes \
                     VALUES((SELECT work_id FROM work_users WHERE user_id = {user_id} AND name = '{workout_name}'),\
                     {exe_id[0][0]},{order_num}) ON DUPLICATE KEY UPDATE work_id = work_id"
                 result, error = self.execute_sql(sql, mycursor, my_db, True)
                 if not result:
                     break
+        # Log info if workout was successfully added
+        if result:
+            logger.info(f"Workout {workout_name} successfully saved by user {user_name}.")
         # Close db connection
         my_db.close()
         return result, error
@@ -403,73 +520,19 @@ class DB:
         result, error = self.execute_sql(sql, mycursor, my_db, False)
         if result:
             workouts = mycursor.fetchall()
-            # return error message if exercise is not found
+            # return error message if workout is not found log info
             if len(workouts) == 0:
                 result = False
                 error = 'Workout not found.'
+                logger.warning(f"Workout {workout_name} not found in user {user_name} data.")
         # If workout exists - delete from database, if query fails return False and error message
         if result:
             sql = f"DELETE FROM work_users WHERE user_id = (SELECT user_id FROM users WHERE name='{user_name}')\
                               AND name='{workout_name}'"
             result, error = self.execute_sql(sql, mycursor, my_db, True)
-        # Close db connection
-        my_db.close()
-        return result, error
-
-    def add_user(self, user_name: str, email: str, password: str):
-        # create new user in database
-        result = False
-        if len(user_name) == 0 or len(email) == 0 or len(password) == 0:
-            return result, 'Wrong input data.'
-        # Connect to DB, if connection fails return False + error message
-        my_db, error_msg = self.connect_to_DB()
-        if not my_db:
-            return result, error_msg
-        # if connection is ok, check if user with inserted name or email already exists
-        mycursor = my_db.cursor()
-        sql = f"SELECT * FROM users WHERE name = '{user_name}' OR email = '{email}'"
-        result, error = self.execute_sql(sql, mycursor, my_db, False)
+        # Log info if workout sucessfully deleted
         if result:
-            user = mycursor.fetchall()
-            # return error if user with this name of email already exists
-            if len(user) >= 1:
-                result = False
-                error = 'User with that name or email already exists.'
-        # if name is not taken -> add user
-        if result:
-            # hash password
-            password_hash, salt = self.generate_new_hash_password(password)
-            # save user_name, email, password_hash and salt into DB
-            sql = f"INSERT INTO users (name, email, password_hash, salt) \
-            VALUES('{user_name}','{email}','{password_hash}','{salt}')"
-            result, error = self.execute_sql(sql, mycursor, my_db, True)
-        # Close db connection
-        my_db.close()
-        return result, error
-
-    def edit_user(self, user_name, email, password):
-        # edit already existing user with given data
-        result = False
-        # Connect to DB, if connection fails return False + error message
-        my_db, error_msg = self.connect_to_DB()
-        if not my_db:
-            return result, error_msg
-        mycursor = my_db.cursor()
-        sql = f"SELECT * FROM users WHERE name = '{user_name}'"
-        result, error = self.execute_sql(sql, mycursor, False)
-        if result:
-            user = mycursor.fetchall()
-            # return if no user with this name found
-            if len(user) == 0:
-                result = False
-                error = 'User not found.'
-        # if user is found generate password hash and salt for new password
-        if result:
-            password_hash, salt = self.generate_new_hash_password(password)
-            # update data in DB if error occurs return False + error message
-            sql = f"UPDATE users SET email = '{email}', password_hash = '{password_hash}', salt = '{salt}'\
-                               WHERE name = '{user_name}'"
-            result, error = self.execute_sql(sql, mycursor, my_db, True)
+            logger.info(f"Workout {workout_name} deleted by user {user_name}.")
         # Close db connection
         my_db.close()
         return result, error
