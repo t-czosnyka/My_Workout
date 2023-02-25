@@ -17,6 +17,7 @@ Features:
 - Custom workouts and exercises,
 - Exporting/importing workouts and exercises as JSON files,
 - Drag and drop function for editing workouts,
+- Logging errors and information,
 - Safely stored passwords,
 
 
