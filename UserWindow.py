@@ -1,3 +1,4 @@
+import string
 from tkinter import *
 from tkinter import messagebox as mb
 
@@ -71,15 +72,24 @@ class UserWindow:
         self.root.deiconify()
 
     def is_name_valid(self, *args):
-        # check if name is valid: between 3-40 characters, only alphanumeric return True/False,
+        # check if name is valid: between 3-40 characters, only alphanumeric + '-' + '_' return True/False,
         # highlight widget red if input incorrect
         name = self.name_str.get()
-        if len(name) < 3 or not name.isalnum() or len(name) > 40:
-            # input incorrect, highlight red
+        # check name characters
+        not_allowed = False
+        # allowed characters
+        allowed_char = string.digits + string.ascii_letters + '-' + '_'
+        # iterate over name
+        for char in name:
+            if char not in allowed_char:
+                not_allowed = True
+                break
+        # input incorrect, highlight red
+        if len(name) < 3 or not_allowed or len(name) > 40:
             self.name_entry.configure(highlightbackground="red", highlightcolor="red")
             return False
+        # input correct, remove highlight
         else:
-            # input correct, remove highlight
             self.name_entry.configure(highlightbackground="light grey", highlightcolor="light grey")
             return True
 
