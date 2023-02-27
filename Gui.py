@@ -197,13 +197,13 @@ class Gui:
         self.curr_exe_text.place(x=320, y=15)
 
         # trace changes in exercise entry widgets
-        self.work_time_min_str.trace_add("write", self.update_curr_exercise)
-        self.work_time_sec_str.trace_add("write", self.update_curr_exercise)
-        self.break_time_min_str.trace_add("write", self.update_curr_exercise)
-        self.break_time_sec_str.trace_add("write", self.update_curr_exercise)
-        self.num_rounds_str.trace_add("write", self.update_curr_exercise)
-        self.delay_time_sec_str.trace_add("write", self.update_curr_exercise)
-        self.exercise_name_str.trace_add("write", self.update_curr_exercise)
+        self.work_time_min_str.trace_add("write", self.load_widget_values_to_current_exercise)
+        self.work_time_sec_str.trace_add("write", self.load_widget_values_to_current_exercise)
+        self.break_time_min_str.trace_add("write", self.load_widget_values_to_current_exercise)
+        self.break_time_sec_str.trace_add("write", self.load_widget_values_to_current_exercise)
+        self.num_rounds_str.trace_add("write", self.load_widget_values_to_current_exercise)
+        self.delay_time_sec_str.trace_add("write", self.load_widget_values_to_current_exercise)
+        self.exercise_name_str.trace_add("write", self.load_widget_values_to_current_exercise)
 
         ### Workouts #####
 
@@ -238,12 +238,12 @@ class Gui:
         # update display based on user requests
         # exercise is finished -> adjust widgets, show message and reset request
         if self.user.req_exercise_finish_to_gui:
-            self.pause_exe()
+            self.pause_exercise()
             self.user.req_exercise_finish_to_gui_reset()
 
         # workout is finished -> adjust widgets, show message and reset request
         if self.user.req_workout_finish_to_gui:
-            self.pause_exe()
+            self.pause_exercise()
             self.adjust_workout_widgets_started()
             self.user.req_workout_finish_to_gui_reset()
 
@@ -293,7 +293,7 @@ class Gui:
     def start_exercise(self):
         # start current exercise, change start button to pause button
         self.user.start_exercise()
-        self.start_btn.configure(text="Pause", command=self.pause_exe)
+        self.start_btn.configure(text="Pause", command=self.pause_exercise)
 
     def start_workout(self):
         # start workout button function
@@ -305,19 +305,19 @@ class Gui:
             # updated workout start button and disable workout widgets
             self.adjust_workout_widgets_not_started()
 
-    def pause_exe(self):
+    def pause_exercise(self):
         # pause current exercise, change pause button to start button
-        self.user.pause_exe()
+        self.user.pause_exercise()
         self.start_btn.configure(text="Start", command=self.start_exercise)
 
     def general_reset(self):
         # reset exercise or workout
-        self.pause_exe()
-        self.user.reset_exe()
+        self.pause_exercise()
+        self.user.reset_exercise()
         self.user.reset_workout()
         # reload workout
         self.workout_menu.select_workout(self.user.curr_workout.name)
-        self.update_curr_exercise()
+        self.load_widget_values_to_current_exercise()
         # enable workout widgets
         self.adjust_workout_widgets_started()
 
@@ -330,7 +330,7 @@ class Gui:
         delay = self.user.get_str_var(self.delay_time_sec_str)
         return [name, work_time, break_time, num_rounds, delay]
 
-    def update_curr_exercise(self, *args):
+    def load_widget_values_to_current_exercise(self, *args):
         # load values from entry widgets to current exercise
         # when exercise or workout is not in progress
         if not self.user.curr_exe_started and not self.user.curr_exe_finished and not self.user.curr_workout_started:
@@ -389,7 +389,7 @@ class Gui:
             self.break_time_sec_str.set(str(self.user.exercises[selected].breaktime_sec % 60))
             self.num_rounds_str.set(str(self.user.exercises[selected].num_rounds))
             self.delay_time_sec_str.set(str(self.user.exercises[selected].delay_sec))
-            self.update_curr_exercise()
+            self.load_widget_values_to_current_exercise()
 
     def log_out(self):
         # logout by unhide main window, close frame
@@ -512,8 +512,10 @@ class Gui:
         try:
             with open(location, mode="r") as f:
                 data = json.load(f)
+        except FileNotFoundError:
+            mb.showerror("Error.", "File not found.")
+            return
         except json.decoder.JSONDecodeError as e:
-            print("Cant read JSON file.", e)
             mb.showerror("Error.", "Cant read JSON file. "+e.msg)
             return
 
@@ -528,14 +530,15 @@ class Gui:
             for work in data[1]['workouts']:
                 values = list(work.values())
                 exercises = values[1]
-                # check if exercises names are present
-                for e in exercises:
-                    if e not in self.user.exercises:
-                        raise TypeError
+                # check if exercises from file are available
+                for exercise in exercises:
+                    if exercise not in self.user.exercises:
+                        # raise custom exception
+                        raise ExerciseNotExists(f"Exercise {exercise} does not exist.")
                 self.user.save_workout(*values)
                 self.DB.save_workout(self.user.name, *values)
-        except TypeError as e:
-            mb.showerror("Error", "Wrong data format. " + str(e))
+        except ExerciseNotExists as e:
+            mb.showerror("Error", e.message)
         except KeyError as e:
             mb.showerror("Error", "Wrong data format. " + str(e))
         else:
@@ -543,8 +546,6 @@ class Gui:
         # update exercise and workout menu
         self.update_exercise_menu()
         self.workout_menu.update_menu()
-
-
 
     def export_config(self):
         # export user exercises and workouts to JSON file
@@ -566,4 +567,12 @@ class Gui:
     def show_help():
         # show help for this window
         pass
+
+
+class ExerciseNotExists(Exception):
+    # Custom exception to raise when workout in imported file contains not existing exercise
+    def __init__(self, message):
+        self.message = message
+        super().__init__(self.message)
+
 
