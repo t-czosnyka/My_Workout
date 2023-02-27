@@ -166,7 +166,7 @@ class CreateUserWindow(UserWindow):
             mb.showerror('Error', 'Repeated password not identical.')
             return
         # If no errors call DB function, res = True if user was successfully created, error = error message if occurred
-        res, error = self.DB.add_user(self.name_str.get(), self.email_str.get(), self.password_str.get())
+        res, error = self.DB.save_user(self.name_str.get(), self.email_str.get(), self.password_str.get())
         if res:
             mb.showinfo('Success', 'User successfully created.')
             self.on_closing()

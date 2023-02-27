@@ -8,12 +8,12 @@ class User:
     def __init__(self, name: str, exercises: dict, workouts: dict, email: str,):
         self.name = name
         self.email = email
-        self.exercises = exercises  # exercises data
-        self.workouts = workouts    # workouts data
+        self.exercises = exercises
+        self.workouts = workouts
         self.my_timer = Timer()
         # Exercise data
         self.current_exercise = Exercise('', 0, 0, 0, 0)
-        self.exe_running = False            # start/pause
+        self.exe_running = False
         self.curr_exe_mode = 'Ready'
         self.curr_exe_delay_done = False
         self.curr_exe_round = 1
@@ -43,7 +43,7 @@ class User:
         self.run_workout()
         # evaluate outputs of these functions
         if self.curr_exe_finished:
-            self.reset_exe()
+            self.reset_exercise()
             # exercise finished in single exercise mode
             if not self.curr_workout_started:
                 self.req_exercise_finish_to_gui = True
@@ -60,7 +60,7 @@ class User:
         # start timer
         self.exe_running = True
 
-    def pause_exe(self):
+    def pause_exercise(self):
         # pause timer
         self.exe_running = False
 
@@ -134,7 +134,7 @@ class User:
         # update timer display
         self.my_timer.update_time_display()
 
-    def reset_exe(self):
+    def reset_exercise(self):
         # reset current exercise to start values
         self.curr_exe_delay_done = False
         self.curr_exe_break_on = False
@@ -176,7 +176,7 @@ class User:
     def start_workout(self):
         # start current workout, return True if started successfully
         if not self.curr_workout_started:
-            self.reset_exe()
+            self.reset_exercise()
             # return True if exercise was loaded
             if self.load_next_exercise():
                 self.curr_workout_started = True

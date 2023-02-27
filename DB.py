@@ -142,7 +142,7 @@ class DB:
             result = True
         return result, error
 
-    def validate(self, in_login, in_password):
+    def validate_user(self, in_login, in_password):
         # validate login and password, return True if login and password hash match database
         valid = False
         login_found = False
@@ -339,7 +339,7 @@ class DB:
         my_db.close()
         return result, error
 
-    def add_user(self, user_name: str, email: str, password: str):
+    def save_user(self, user_name: str, email: str, password: str):
         # create new user in database
         result = False
         if len(user_name) == 0 or len(email) == 0 or len(password) == 0:

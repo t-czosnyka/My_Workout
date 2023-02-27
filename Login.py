@@ -55,7 +55,7 @@ class Login:
 
     def validate(self, *args):
         # validate login and password in the database, show error message if not correct
-        result, error = self.DB.validate(self.login_str.get(), self.password_str.get())
+        result, error = self.DB.validate_user(self.login_str.get(), self.password_str.get())
         if result:
             login = self.login_str.get()
             self.login_str.set('')
