@@ -382,6 +382,7 @@ class Gui:
     def select_exercise(self, selected):
         # insert selected values into entry widgets
         if selected in self.user.exercises:
+            self.select_exe_str.set(selected)
             self.exercise_name_str.set(self.user.exercises[selected].name)
             self.work_time_min_str.set(str(self.user.exercises[selected].worktime_sec // 60))
             self.work_time_sec_str.set(str(self.user.exercises[selected].worktime_sec % 60))
