@@ -253,7 +253,10 @@ class EditWorkoutWindow:
     @staticmethod
     def show_help():
         # show help for this window
-        pass
+        mb.showinfo("Help", "1. Drag and drop exercises from exercises list into the workout list.\n"
+                            "2. Double click exercise to remove it from workout list.\n"
+                            "3. Workout name cannot be empty.\n"
+                            "4. Extra break is added between exercises.")
 
 
 

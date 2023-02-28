@@ -1,3 +1,8 @@
 .idea
 __pycache__
 database.log
+database.log.1
+database.log.2
+database.log.3
+database.log.4
+database.log.5

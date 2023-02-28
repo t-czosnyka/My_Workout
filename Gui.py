@@ -566,7 +566,14 @@ class Gui:
     @staticmethod
     def show_help():
         # show help for this window
-        pass
+        mb.showinfo("Help",
+                    "1. Exercises consist of work time and break time for set number of rounds. "
+                    "Delay before starting first round can also be set.\n\n"
+                    "2. To start the exercise its number of rounds and worktime or breaktime must be greater than zero.\n\n"
+                    "3. Exercise can be saved when its name its not empty.\n\n"
+                    "4. Workout is a sequence of exercises that are automatically started. "
+                    "Additional break between exercises can be inserted as an option in workout.\n\n"
+                    "5. Workout can be stopped with reset button.")
 
 
 class ExerciseNotExists(Exception):

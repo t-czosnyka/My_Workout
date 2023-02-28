@@ -95,7 +95,7 @@ class UserWindow:
 
     def is_email_valid(self, *args):
         # check if email is valid: between 3-40 characters, contains 1 @, doesnt contain space, domain contains '.',
-        # '.' is not first or last character of the domain and local name, d
+        # '.' is not first or last character of the domain and local name
         email = self.email_str.get()
         # check for length and presence of @
         if len(email) == 0 or '@' not in email or ' ' in email or len(email) > 40:
@@ -117,7 +117,7 @@ class UserWindow:
 
     @staticmethod
     def is_password_valid(str_var, widget, *args):
-        # check if password is valid: between 3-40 characters, no spaces, contains at least one number and one letter
+        # check if password is valid: between 4-40 characters, no spaces, contains at least one number and one letter
         password = str_var.get()
         num, let = False, False
         # check for presence of one letter and one number
@@ -141,8 +141,9 @@ class UserWindow:
     @staticmethod
     def show_help():
         # show help for this window
-        pass
-
+        mb.showinfo("Help", "1. User name length: 4-40 characters. Must contain only alpha-numeric character + '-' and '_'.\n\n"
+                            "2. Email length: 4-40 characters. Must contain one '@'. Domain name must contain '.'. Cannot contain spaces.\n\n"
+                            "3. Password length: 4-40 characters. Must contain one number, one letter and no spaces.")
 
 class CreateUserWindow(UserWindow):
     # Class creating window allowing to create new user before logging in
