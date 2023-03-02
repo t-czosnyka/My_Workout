@@ -38,7 +38,7 @@ class DB:
             return
 
         mycursor = my_db.cursor()
-        # Create users table if it doesnt exist
+        # Create users table if it doesn't exist
         sql = "CREATE TABLE IF NOT EXISTS users (user_id INT AUTO_INCREMENT PRIMARY KEY,\
                                name VARCHAR(40), email VARCHAR(40), password_hash VARCHAR(64), salt VARCHAR(64),\
                              UNIQUE(name))"
@@ -47,7 +47,7 @@ class DB:
             self.error = True
             return
 
-        # Create exercises table if it doesnt exist
+        # Create exercises table if it doesn't exist
         sql = "CREATE TABLE IF NOT EXISTS exercises (exe_id INT AUTO_INCREMENT PRIMARY KEY, user_id INT,\
                               name VARCHAR(40), time_work INT, time_rest INT, num_rounds INT, delay INT,\
                               UNIQUE(user_id,name), FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE)"
@@ -56,7 +56,7 @@ class DB:
             self.error = True
             return
 
-        # Create work_users table if it doesnt exist
+        # Create work_users table if it doesn't exist
         sql = "CREATE TABLE IF NOT EXISTS work_users (work_id INT AUTO_INCREMENT PRIMARY KEY, user_id INT,\
                               name  VARCHAR(40), extra_break_sec INT DEFAULT 0, UNIQUE(user_id,name),\
                               FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE)"
@@ -65,7 +65,7 @@ class DB:
             self.error = True
             return
 
-        # Create work_exes table if it doesnt exist
+        # Create work_exes table if it doesn't exist
         sql = "CREATE TABLE IF NOT EXISTS work_exes (work_id INT, exe_id INT, order_num INT, \
                              UNIQUE(work_id, order_num),\
                              FOREIGN KEY (work_id) REFERENCES work_users(work_id) ON DELETE CASCADE,\
@@ -116,6 +116,7 @@ class DB:
             return None, self.error_msg
         else:
             return my_db, ''
+
     @staticmethod
     def execute_sql(sql: str, mycursor, my_db, commit: bool):
         # function to execute mysql statement with error handling and message logging
@@ -179,10 +180,10 @@ class DB:
                 # compare saved password hash with hash generated with input password
                 if saved_password_hash == input_password_hash:
                     valid = True
-                    # log information on succesfull log in
+                    # log information on successful log in
                     logger.info(f"User {in_login} logged in.")
                 else:
-                    # log warning on unsuccesfull log in
+                    # log warning on unsuccessful log in
                     logger.warning(f"Wrong password for user {in_login}.")
                     error = "Wrong password."
         my_db.close()
@@ -206,7 +207,7 @@ class DB:
         user = User(user_name, exercises, workouts, *data)
         return user, ''
 
-    def get_exercises(self,user_name):
+    def get_exercises(self, user_name):
         # Get exercises data from DB for user
         exercises = {}
         result = False
@@ -257,7 +258,7 @@ class DB:
             return result, workouts, error_msg
         # If connection is successful run mysql statement
         # Get workout data from DB - row for each exercise in work_exes for current user
-        # Data: (workout name, exercise name, exercise order number, extra break in seconds)
+        # Data: (workout name, exercise name, exercise order number(from 1), extra break in seconds)
         mycursor = my_db.cursor()
         sql = f"SELECT work_users.name, exercises.name, work_exes.order_num, work_users.extra_break_sec \
             FROM work_users \
@@ -266,21 +267,23 @@ class DB:
             WHERE work_users.user_id =(SELECT user_id FROM users WHERE name = '{user_name}');"
         result, error = self.execute_sql(sql, mycursor, my_db, False)
         if result:
-            wr_db = mycursor.fetchall()
-            # Create Workout objects in workouts dict
-            for w in wr_db:
+            workout_data = mycursor.fetchall()
+            # create workout objects
+            for w in workout_data:
                 workout_name, exercise_name, exercise_order_num, extra_break_sec = w[0], w[1], w[2], w[3]
-                # if workout exists add exercises
-                if workout_name in workouts:
-                    workouts[workout_name].exercises.append((exercise_name, exercise_order_num))
-                    workouts[workout_name].extra_break_sec = extra_break_sec
-                # if workout doesn't exist create new workout object
-                else:
-                    workouts[workout_name] = Workout(workout_name, [(exercise_name, exercise_order_num)],
-                                                     extra_break_sec)
-                # sort exercises in each workout by its order number
-            for key in workouts.keys():
-                workouts[key].exercises.sort(key=lambda x: x[1])
+                # # if workout exists add data
+                # if workout_name in workouts:
+                #     workouts[workout_name].extra_break_sec = extra_break_sec
+                # # if workout doesn't exist create new workout object
+                if workout_name not in workouts:
+                    workouts[workout_name] = Workout(workout_name, [], extra_break_sec)
+                # check if current exercise order number is bigger then exercises list length
+                len_difference = exercise_order_num - len(workouts[workout_name].exercises)
+                if len_difference > 0:
+                    # extend the list
+                    workouts[workout_name].exercises.extend(['']*len_difference)
+                # write exercise name in place by its order number
+                workouts[workout_name].exercises[exercise_order_num-1] = exercise_name
         # Close DB connection
         my_db.close()
         return result, workouts, error
@@ -307,9 +310,8 @@ class DB:
         my_db.close()
         return result, error
 
-    def delete_exercise(self,user_name,exe_name):
+    def delete_exercise(self, user_name, exe_name):
         # delete exercise from DB
-        error = ''
         result = False
         # Connect to DB, if connection fails return False + error message
         my_db, error_msg = self.connect_to_DB()
@@ -409,7 +411,6 @@ class DB:
     def delete_user(self, user_name):
         # delete current user
         result = False
-        error = ''
         # Connect to DB, if connection fails return False + error message
         my_db, error_msg = self.connect_to_DB()
         if not my_db:
@@ -468,7 +469,6 @@ class DB:
 
         # get added recently added workout id
         if result:
-            workout_added = True
             sql = f"SELECT work_id FROM work_users WHERE name = '{workout_name}' AND user_id = '{user_id}'"
             result, error = self.execute_sql(sql, mycursor, my_db, False)
 
@@ -530,7 +530,7 @@ class DB:
             sql = f"DELETE FROM work_users WHERE user_id = (SELECT user_id FROM users WHERE name='{user_name}')\
                               AND name='{workout_name}'"
             result, error = self.execute_sql(sql, mycursor, my_db, True)
-        # Log info if workout sucessfully deleted
+        # Log info if workout successfully deleted
         if result:
             logger.info(f"Workout {workout_name} deleted by user {user_name}.")
         # Close db connection
@@ -541,7 +541,7 @@ class DB:
     def generate_new_hash_password(password: str):
         # generate hash of given password using SHA-256 from hashlib, generate new salt
         # generate random 16 char salt
-        salt = ''.join(random.choices(string.ascii_letters+string.digits,k=16))
+        salt = ''.join(random.choices(string.ascii_letters+string.digits, k=16))
         # create salt+password hash using SHA-256 hashing function
         password_hash = hashlib.sha256(salt.encode() + password.encode()).hexdigest()
         return password_hash, salt
@@ -550,7 +550,3 @@ class DB:
     def generate_hash_password_with_salt(password: str, salt: str):
         # generate hash from password with given salt
         return hashlib.sha256(salt.encode() + password.encode()).hexdigest()
-
-
-
-

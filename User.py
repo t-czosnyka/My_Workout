@@ -63,9 +63,9 @@ class User:
         else:
             # create new workout
             self.workouts[workout_name] = Workout(workout_name, [], extra_break_sec)
-        # add exercises as tuples with (name, order number)
-        for i, exe_name in enumerate(exercises, 1):
-            self.workouts[workout_name].exercises.append((exe_name, i))
+        # add exercises
+        for exe_name in exercises:
+            self.workouts[workout_name].exercises.append(exe_name)
 
     def delete_workout(self, workout_name):
         # Delete workout with given name if present

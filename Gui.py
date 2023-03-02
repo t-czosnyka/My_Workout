@@ -115,17 +115,17 @@ class Gui:
         # time passed
         self.total_time_passed_label = Label(self.frame, text="Total time:", font=("Helvetica", 12))
         self.total_time_passed_label.place(x=20, y=460)
-        self.total_time_passed = Label(self.frame, textvariable=self.total_time_passed_str,font=("Helvetica", 15))
+        self.total_time_passed = Label(self.frame, textvariable=self.total_time_passed_str, font=("Helvetica", 15))
         self.total_time_passed.place(x=170, y=457)
 
         self.work_time_passed_label = Label(self.frame, text="Total work time:", font=("Helvetica", 12))
         self.work_time_passed_label.place(x=20, y=485)
-        self.work_time_passed = Label(self.frame, textvariable=self.work_time_passed_str,font=("Helvetica", 15))
+        self.work_time_passed = Label(self.frame, textvariable=self.work_time_passed_str, font=("Helvetica", 15))
         self.work_time_passed.place(x=170, y=482)
 
         self.break_time_passed_label = Label(self.frame, text="Total break time:", font=("Helvetica", 12))
         self.break_time_passed_label.place(x=20, y=510)
-        self.break_time_passed = Label(self.frame, textvariable=self.break_time_passed_str,font=("Helvetica", 15))
+        self.break_time_passed = Label(self.frame, textvariable=self.break_time_passed_str, font=("Helvetica", 15))
         self.break_time_passed.place(x=170, y=507)
 
         ### Exercises ###
@@ -153,7 +153,7 @@ class Gui:
         self.delay_time_label.place(x=20, y=366)
 
         # validating functions for exercise entry widgets
-        reg = self.frame.register(lambda x: self.user.validate_time_input(x,2))
+        reg = self.frame.register(lambda x: self.user.validate_time_input(x, 2))
         reg2 = self.frame.register(self.user.validate_name_input)
 
         self.exercise_name = Entry(self.frame, width=15, validate="key", validatecommand=(reg2, '%P'),
@@ -177,7 +177,8 @@ class Gui:
                                     textvariable=self.break_time_sec_str)
         self.break_time_sec.place(x=210, y=323)
 
-        self.num_rounds = Entry(self.frame, validate="key", validatecommand=(reg, '%P'), width=5, textvariable=self.num_rounds_str)
+        self.num_rounds = Entry(self.frame, validate="key", validatecommand=(reg, '%P'), width=5,
+                                textvariable=self.num_rounds_str)
         self.num_rounds.place(x=150, y=345)
 
         self.delay_time_sec = Entry(self.frame, validate="key", validatecommand=(reg, '%P'), width=5,
@@ -185,12 +186,13 @@ class Gui:
         self.delay_time_sec.place(x=150, y=367)
 
         # save exercise button
-        self.save_exercise_btn = Button(self.frame, text="Save Exercise", command=self.save_exercise, state=DISABLED, width=12)
+        self.save_exercise_btn = Button(self.frame, text="Save Exercise", command=self.save_exercise, state=DISABLED,
+                                        width=12)
         self.save_exercise_btn.place(x=20, y=397)
 
         # delete exercise button
         self.delete_btn = Button(self.frame, text="Delete Exercise", command=self.delete_exercise, width=12)
-        self.delete_btn.place(x=20,y=427)
+        self.delete_btn.place(x=20, y=427)
 
         # create option menu based on user exercises
         self.create_exercise_menu()
@@ -237,19 +239,10 @@ class Gui:
         self.continuous_update()
 
     def continuous_update(self):
-        # continuous update function runs every 0.1s to update GUI
-        # run main User function to control exercises and workouts
+        # continuous update function runs every 0.1s - call main processor function, updates gui
+        # run main processor functions to control workouts and exercises
         self.exercise_processor.main()
         self.workout_processor.main()
-        # update display based on user requests
-        # exercise is finished -> adjust widgets, show message and reset request
-        if self.exercise_processor.exercise_finished and not self.workout_processor.workout_started:
-            self.pause_exercise()
-
-        # workout is finished -> adjust widgets, show message and reset request
-        if self.workout_processor.workout_finished:
-            self.pause_exercise()
-            self.adjust_workout_widgets_started()
 
         # next exercise request -> load current exercise data into widgets
         if self.workout_processor.gui_select_next_exe:
@@ -262,6 +255,16 @@ class Gui:
         self.break_time_passed_str.set(self.exercise_processor.my_timer.break_time_passed_str)
         self.round_num_int.set(self.exercise_processor.current_round)
         self.curr_mode_str.set(self.exercise_processor.current_exercise_mode)
+
+        # single exercise is finished -> adjust widgets, show message and reset request
+        if self.exercise_processor.exercise_finished and not self.workout_processor.workout_started:
+            self.pause_exercise()
+
+        # workout is finished -> adjust widgets, show message and reset request
+        if self.workout_processor.workout_finished:
+            self.pause_exercise()
+            self.adjust_workout_widgets_not_started()
+            mb.showinfo("Info", "Workout finished.")
 
         if self.exercise_processor.current_exercise_mode == 'Delay' or\
                 self.exercise_processor.current_exercise_mode == 'Break':
@@ -330,7 +333,7 @@ class Gui:
             # load current exercise from workout into entry widgets
             self.select_exercise(self.exercise_processor.current_exercise.name)
             # updated workout start button and disable workout widgets
-            self.adjust_workout_widgets_not_started()
+            self.adjust_workout_widgets_started()
 
     def reset_workout(self):
         # stop and reset current workout
@@ -338,9 +341,7 @@ class Gui:
         self.exercise_processor.reset_exercise()
         self.workout_processor.reset_workout()
         # enable workout widgets
-        self.adjust_workout_widgets_started()
-
-
+        self.adjust_workout_widgets_not_started()
 
     def get_exercise_inputs(self):
         # get inputs from exercise entry widgets
@@ -416,7 +417,7 @@ class Gui:
             # Display message
             mb.showerror("Database Error.", error)
             return
-        # Create or update Exercise object if DB operation was susccesful
+        # Create or update Exercise object if DB operation was successful
         self.user.save_exercise(inputs)
         # Update options in menu and select saved exercise
         self.update_exercise_menu()
@@ -479,7 +480,8 @@ class Gui:
         # Hide Gui and call edit workout window
         self.frame.withdraw()
         window = Toplevel()
-        EditWorkoutWindow(self.frame, window, self.DB, self.user, self.workout_menu.select_work_str.get(), self.workout_processor)
+        EditWorkoutWindow(self.frame, window, self.DB, self.user, self.workout_menu.select_work_str.get(),
+                          self.workout_processor)
 
     def adjust_workout_widgets_not_started(self):
         # adjust workout widgets when workout is not started
@@ -530,7 +532,7 @@ class Gui:
                 values = list(exe.values())
                 self.user.save_exercise(values)
                 self.DB.save_exercise(self.user.name, *values)
-            # save imported workouts to user and databse
+            # save imported workouts to user and database
             for work in data[1]['workouts']:
                 values = list(work.values())
                 exercises = values[1]
@@ -554,7 +556,7 @@ class Gui:
     def export_config(self):
         # export user exercises and workouts to JSON file
         location = filedialog.asksaveasfilename(initialdir="/", title="Choose location to export",
-                                                       filetypes=(("JSON files", "*.json"),))
+                                                filetypes=(("JSON files", "*.json"),))
         exe_data = self.user.encode_exercises()
         workout_data = self.user.encode_workouts()
 
@@ -585,5 +587,3 @@ class ExerciseNotExists(Exception):
     def __init__(self, message):
         self.message = message
         super().__init__(self.message)
-
-

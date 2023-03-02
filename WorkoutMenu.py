@@ -5,7 +5,7 @@ from Workout import WorkoutProcessor
 
 class WorkoutMenu:
     # class creates select workout menu based on user workouts, writes selected workout data into widgets
-    def __init__(self, user: User, frame, pos_x: int, pos_y:int, curr_workout_list, disable_break_entry: bool,
+    def __init__(self, user: User, frame, pos_x: int, pos_y: int, curr_workout_list, disable_break_entry: bool,
                  workout_processor: WorkoutProcessor):
         self.user = user
         self.frame = frame
@@ -35,9 +35,6 @@ class WorkoutMenu:
             self.workout_break_sec.configure(state=DISABLED)
         self.create_menu()
 
-
-
-
     def create_menu(self):
         # create option menu with workouts of current user
         if len(self.user.workouts) > 0:
@@ -64,7 +61,6 @@ class WorkoutMenu:
         self.create_menu()
         self.refresh_workout()
 
-
     def select_workout(self, selected):
         # select workout from option menu and load it as current workout into list and user.curr_workout
         # when current workout is not started
@@ -75,11 +71,9 @@ class WorkoutMenu:
                 self.curr_workout_list.delete(0, END)
                 # write workout break into variable
                 self.workout_break_sec_str.set(str(self.workout_processor.current_workout.extra_break_sec))
-                if len(self.user.workouts) == 0:
-                    return
+                # insert exercises into workout list
                 for i, exe in enumerate(self.user.workouts[selected].exercises, 1):
-                    self.curr_workout_list.insert(i, exe[0])
-
+                    self.curr_workout_list.insert(i, exe)
 
     def refresh_workout(self):
         # re-select currently selected workout to apply changes
