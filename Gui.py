@@ -109,7 +109,7 @@ class Gui:
                                 state=DISABLED)
         self.start_btn.grid(row=2, column=0, columnspan=2)
 
-        self.reset_btn = Button(self.frame, text="Reset", command=self.general_reset, width=20, height=2)
+        self.reset_btn = Button(self.frame, text="Reset", command=self.reset_exercise, width=20, height=2)
         self.reset_btn.grid(row=2, column=2, columnspan=2)
 
         # time passed
@@ -129,7 +129,7 @@ class Gui:
         self.break_time_passed.place(x=170, y=507)
 
         ### Exercises ###
-        # Create workout/exercise widgets
+        # Create exercise widgets
 
         self.exe_label = Label(self.frame, text="Exercise", font=("Helvetica", 20))
         self.exe_label.grid(row=3, column=0, columnspan=2, pady=(10, 0))
@@ -152,7 +152,7 @@ class Gui:
         self.delay_time_label = Label(self.frame, text="Delay time[sec]:", font=("Helvetica", 10))
         self.delay_time_label.place(x=20, y=366)
 
-        # validating functions for entry widgets
+        # validating functions for exercise entry widgets
         reg = self.frame.register(lambda x: self.user.validate_time_input(x,2))
         reg2 = self.frame.register(self.user.validate_name_input)
 
@@ -210,7 +210,7 @@ class Gui:
         self.exercise_name_str.trace_add("write", self.load_widget_values_to_current_exercise)
 
         ### Workouts #####
-
+        # Create workout widgets
         # create list with exercises in current workout
         self.curr_workout_exe_list = Listbox(self.frame, height=7, selectmode=SINGLE)
         self.curr_workout_exe_list.place(x=300, y=279)
@@ -230,7 +230,7 @@ class Gui:
 
         # Skip exercise button, finish current exercise in workout
         self.skip_exercise_btn = Button(self.frame, text="Skip Exercise",
-                                       command=self.skip_exercise, width=14, state=DISABLED)
+                                        command=self.skip_exercise, width=14, state=DISABLED)
         self.skip_exercise_btn.place(x=300, y=518)
 
         # Call continuous update function
@@ -311,6 +311,16 @@ class Gui:
         self.exercise_processor.pause_exercise()
         self.start_btn.configure(text="Start", command=self.start_exercise)
 
+    def reset_exercise(self):
+        # pause and reset current exercise
+        self.pause_exercise()
+        self.exercise_processor.reset_exercise()
+        self.load_widget_values_to_current_exercise()
+        # self.workout_processor.reset_workout()
+        # # reload workout
+        # self.load_widget_values_to_current_exercise()
+        # # enable workout widgets
+        # self.adjust_workout_widgets_started()
 
     def start_workout(self):
         # start workout button function
@@ -322,16 +332,15 @@ class Gui:
             # updated workout start button and disable workout widgets
             self.adjust_workout_widgets_not_started()
 
-
-    def general_reset(self):
-        # reset exercise or workout
+    def reset_workout(self):
+        # stop and reset current workout
         self.pause_exercise()
         self.exercise_processor.reset_exercise()
         self.workout_processor.reset_workout()
-        # reload workout
-        self.load_widget_values_to_current_exercise()
         # enable workout widgets
         self.adjust_workout_widgets_started()
+
+
 
     def get_exercise_inputs(self):
         # get inputs from exercise entry widgets
@@ -472,18 +481,18 @@ class Gui:
         window = Toplevel()
         EditWorkoutWindow(self.frame, window, self.DB, self.user, self.workout_menu.select_work_str.get(), self.workout_processor)
 
-    def adjust_workout_widgets_started(self):
+    def adjust_workout_widgets_not_started(self):
         # adjust workout widgets when workout is not started
-        self.start_work_btn.configure(text="Start Workout", state=NORMAL)
+        self.start_work_btn.configure(text="Start Workout", state=NORMAL, command=self.start_workout)
         self.workout_menu.enable()
         self.select_exe_menu.configure(state=NORMAL)
         self.curr_workout_exe_list.configure(state=NORMAL)
         self.edit_workout_btn.configure(state=NORMAL)
         self.skip_exercise_btn.configure(state=DISABLED)
 
-    def adjust_workout_widgets_not_started(self):
-        # adjust workout widgets when workout is not started
-        self.start_work_btn.configure(text="Workout Started", state=DISABLED)
+    def adjust_workout_widgets_started(self):
+        # adjust workout widgets when workout started
+        self.start_work_btn.configure(text="Reset Workout", state=NORMAL, command=self.reset_workout)
         self.workout_menu.disable()
         self.select_exe_menu.configure(state=DISABLED)
         self.curr_workout_exe_list.configure(state=DISABLED)
@@ -568,7 +577,7 @@ class Gui:
                     "3. Exercise can be saved when its name its not empty.\n\n"
                     "4. Workout is a sequence of exercises that are automatically started. "
                     "Additional break between exercises can be inserted as an option in workout.\n\n"
-                    "5. Workout can be stopped with reset button.")
+                    "5. Workout can be stopped with reset workout button.")
 
 
 class ExerciseNotExists(Exception):
