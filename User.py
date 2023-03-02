@@ -1,221 +1,37 @@
 import copy
 from Exercise import Exercise, encode_exercise
-from Timer import Timer
 from Workout import Workout, encode_workout
 
-class User:
 
+class User:
+    # User class stores and handles editing of user exercise and workout data
     def __init__(self, name: str, exercises: dict, workouts: dict, email: str,):
         self.name = name
         self.email = email
         self.exercises = exercises
         self.workouts = workouts
-        self.my_timer = Timer()
-        # Exercise data
-        self.current_exercise = Exercise('', 0, 0, 0, 0)
-        self.exe_running = False
-        self.curr_exe_mode = 'Ready'
-        self.curr_exe_delay_done = False
-        self.curr_exe_round = 1
-        self.curr_exe_break_on = False
-        self.curr_exe_valid = False
-        self.curr_exe_started = False
-        self.curr_exe_finished = False
-        self.exe_work_finish = False
-        self.exe_break_finish = False
-        # Workout data
-        self.curr_workout = Workout('', [], 0)
-        self.workout_break_exe = Exercise('', 0, 0, 2, 0)
-        self.curr_workout_started = False
-        self.curr_workout_finished = False
-        self.curr_workout_break = False
         # Interface to Gui
         self.req_workout_update = False
-        self.req_play_sound = False
-        self.req_exercise_finish_to_gui = False  # current exercise finished
-        self.req_workout_finish_to_gui = False  # current workout finished
-        self.req_select_next_exe = False  # req loading next exercise into display
 
-    def main_run(self):
-        # main user function evaluate signals from exercise/workout and communicate with gui
-        # run exercise and workout functions
-        self.run_exe()
-        self.run_workout()
-        # evaluate outputs of these functions
-        if self.curr_exe_finished:
-            self.reset_exercise()
-            # exercise finished in single exercise mode
-            if not self.curr_workout_started:
-                self.req_exercise_finish_to_gui = True
-                self.update_display()
-            # exercise finished in workout mode -> start next exercise
-            elif not self.curr_workout_finished:
-                self.req_select_next_exe = True
-            # workout finished
-            else:
-                self.req_workout_finish_to_gui = True
-                self.reset_workout()
-
-    def start_exercise(self):
-        # start timer
-        self.exe_running = True
-
-    def pause_exercise(self):
-        # pause timer
-        self.exe_running = False
-
-    def run_exe(self):
-        # run current exercise: delay->(work->break)*n-1->work, n - number of rounds, no break in the last round
-        # if exercise not in progress or finished update display and return
-        if not self.exe_running and not self.curr_exe_started or self.curr_exe_finished:
-            self.update_display()
-            return -1
-        # if exercise is not valid - worktime > 0 or break time > 0 and number of rounds > 0 return
-        self.check_exe()
-        if not self.curr_exe_valid:
-            return -2
-        self.curr_exe_started = True
-        # Exercise running select mode Delay/Work/Break
-        delay = self.current_exercise.delay_sec > 0 and not self.curr_exe_delay_done
-        # Delay Mode
-        if delay:
-            self.curr_exe_mode = 'Delay'
-            # Start timer
-            if self.my_timer.countdown_timer(self.current_exercise.delay_sec, self.exe_running, False):
-                # Timer finished
-                self.curr_exe_delay_done = True
-                self.my_timer.reset()
-        # Work Mode
-        elif not self.exe_work_finish and self.current_exercise.worktime_sec > 0:
-            self.curr_exe_mode = 'Work'
-            # Start timer
-            # Request play sound at the beginning of work time
-            if not self.my_timer.timer_started:
-                self.req_play_sound = True
-            if self.my_timer.countdown_timer(self.current_exercise.worktime_sec, self.exe_running, True):
-                # Timer finished
-                self.exe_work_finish = True
-                self.my_timer.reset()
-                # Request play sound at the end of work time
-                self.req_play_sound = True
-        # Break Mode
-        else:
-            self.curr_exe_mode = 'Break'
-            # Start timer
-            if self.my_timer.countdown_timer(self.current_exercise.breaktime_sec, self.exe_running, False):
-                # Timer finished
-                self.exe_break_finish = True
-                self.my_timer.reset()
-        # Round finished, reset marker and increment number of rounds, not for delay
-        if not delay and (self.exe_work_finish or self.current_exercise.worktime_sec == 0) and\
-                (self.exe_break_finish or self.current_exercise.breaktime_sec == 0 or
-                 self.curr_exe_round == self.current_exercise.num_rounds):
-            self.exe_work_finish = False
-            self.exe_break_finish = False
-            self.curr_exe_round += 1
-        # End of exercise, special condition if worktime = 0
-        if self.curr_exe_round > self.current_exercise.num_rounds or\
-                self.current_exercise.worktime_sec == 0 and self.curr_exe_round == self.current_exercise.num_rounds:
-            self.curr_exe_round = self.current_exercise.num_rounds
-            self.curr_exe_finished = True
-
-    def update_display(self):
-        # updating dispaly for fluid visualisation when exercise is not yet started
-        # load current values into the timer, for display
-        if self.current_exercise.delay_sec > 0:
-            self.curr_exe_mode = 'Delay'
-            self.my_timer.active_time_sec = self.current_exercise.delay_sec
-        elif self.current_exercise.worktime_sec > 0:
-            self.curr_exe_mode = 'Work'
-            self.my_timer.active_time_sec = self.current_exercise.worktime_sec
-        else:
-            self.curr_exe_mode = 'Break'
-            self.my_timer.active_time_sec = self.current_exercise.breaktime_sec
-        # update timer display
-        self.my_timer.update_time_display()
-
-    def reset_exercise(self):
-        # reset current exercise to start values
-        self.curr_exe_delay_done = False
-        self.curr_exe_break_on = False
-        self.curr_exe_round = 1
-        self.exe_running = False
-        self.my_timer.reset()
-        self.curr_exe_started = False
-        self.curr_exe_finished = False
-        self.exe_work_finish = False
-        self.exe_break_finish = False
-
-    def reset_workout(self):
-        # reset current workout to start values
-        self.curr_workout_started = False
-        self.curr_workout_finished = False
-        self.curr_workout_break = False
-        # reload current workout
-        self.load_workout(self.curr_workout.name)
-
-    def check_exe(self):
-        # return true if exercise is valid: worktime > 0, number of rounds > 0 return
-        if self.current_exercise.num_rounds > 0 and (self.current_exercise.worktime_sec > 0 or
-                                                     (self.current_exercise.breaktime_sec > 0 and self.current_exercise.num_rounds > 1)):
-            self.curr_exe_valid = True
-        else:
-            self.curr_exe_valid = False
-
-    def load_next_exercise(self):
-        # load next exercise from workout if available
-        if len(self.curr_workout.exercises) > 0:
-            next_exe_name = self.curr_workout.exercises.pop(0)[0]
-            # check if this exercise is available
-            if next_exe_name in self.exercises:
-                # Load first exercise from current workout and start workout
-                self.current_exercise = copy.deepcopy(self.exercises[next_exe_name])
-                return True
-        return False
-
-    def start_workout(self):
-        # start current workout, return True if started successfully
-        if not self.curr_workout_started:
-            self.reset_exercise()
-            # return True if exercise was loaded
-            if self.load_next_exercise():
-                self.curr_workout_started = True
-                self.curr_workout_break = True
-                self.workout_break_exe.breaktime_sec = self.curr_workout.extra_break_sec
-        return self.curr_workout_started
-
-    def run_workout(self):
-        # continuous function to run current workout
-        if not self.curr_workout_started or self.curr_workout_finished:
-            return
-        # if exercise is finished load next
-        # curr_exe_finished set by run_exe function
-        if self.curr_exe_finished:
-            # check if there are more exercises
-            if len(self.curr_workout.exercises) == 0:
-                # End of workout if no moe exercises left
-                self.curr_workout_finished = True
-                return
-            # If more exercises are present continue workout
-            # Break between exercises
-            if self.curr_workout_break and self.curr_workout.extra_break_sec > 0:
-                self.current_exercise = copy.deepcopy(self.workout_break_exe)
-                self.curr_workout_break = False
-            # Next exercise from the list
-            elif self.load_next_exercise():
-                self.curr_workout_break = True
-
-    def load_workout(self, selected_name):
-        # Load selected workout into curr_workout
-        # If there are no workouts available -> load empty workout
-        if len(self.workouts) == 0:
-            self.curr_workout = Workout('', [], 0)
-            return True
-        # check if selected workout exists
-        if selected_name in self.workouts:
-            self.curr_workout = copy.deepcopy(self.workouts[selected_name])
-            return True
-        return False
+    # def main_run(self):
+    #     # main user function evaluate signals from exercise/workout and communicate with gui
+    #     # run exercise and workout functions
+    #     self.exercise_processor.main()
+    #     self.run_workout()
+    #     # evaluate outputs of these functions
+    #     if self.exercise_processor.exercise_finished:
+    #         self.exercise_processor.reset_exercise()
+    #         # exercise finished in single exercise mode
+    #         if not self.curr_workout_started:
+    #             self.req_exercise_finish_to_gui = True
+    #             self.exercise_processor.update_display()
+    #         # exercise finished in workout mode -> start next exercise
+    #         elif not self.curr_workout_finished:
+    #             self.req_select_next_exe = True
+    #         # workout finished
+    #         else:
+    #             self.req_workout_finish_to_gui = True
+    #             self.reset_workout()
 
     def save_exercise(self, inputs: list):
         # Create or update exercise object based on input from Gui
@@ -275,10 +91,19 @@ class User:
         else:
             return
 
-    def skip_exercise(self):
-        if self.curr_workout_started:
-            self.exe_running = False
-            self.curr_exe_finished = True
+    def get_workout(self, workout_name):
+        # Return workout with requested name if it exists
+        if workout_name in self.workouts:
+            return self.workouts[workout_name]
+        else:
+            return None
+
+    def get_exercise(self, exercise_name):
+        # Return exercise with requested name if it exists
+        if exercise_name in self.exercises:
+            return self.exercises[exercise_name]
+        else:
+            return None
 
     @staticmethod
     # validating function for time value entry widgets, check if input is digit or is empty, less character than max
@@ -324,17 +149,13 @@ class User:
     def req_workout_update_reset(self):
         self.req_workout_update = False
 
-    def req_play_sound_reset(self):
-        self.req_play_sound = False
-
-    def req_exercise_finish_to_gui_reset(self):
-        self.req_exercise_finish_to_gui = False
-
-    def req_workout_finish_to_gui_reset(self):
-        self.req_workout_finish_to_gui = False
-
     def req_select_next_exe_reset(self):
         self.req_select_next_exe = False
+
+
+
+
+
 
 
 

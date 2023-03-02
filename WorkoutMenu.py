@@ -1,13 +1,18 @@
 from User import User
 from tkinter import *
+from Workout import WorkoutProcessor
+
+
 class WorkoutMenu:
     # class creates select workout menu based on user workouts, writes selected workout data into widgets
-    def __init__(self, user: User, frame, pos_x: int, pos_y:int, curr_workout_list, disable_break_entry: bool):
+    def __init__(self, user: User, frame, pos_x: int, pos_y:int, curr_workout_list, disable_break_entry: bool,
+                 workout_processor: WorkoutProcessor):
         self.user = user
         self.frame = frame
         self.pos_x = pos_x
         self.pos_y = pos_y
         self.curr_workout_list = curr_workout_list
+        self.workout_processor = workout_processor
 
         # Define variables
         self.select_work_str = StringVar()
@@ -29,6 +34,8 @@ class WorkoutMenu:
         if disable_break_entry:
             self.workout_break_sec.configure(state=DISABLED)
         self.create_menu()
+
+
 
 
     def create_menu(self):
@@ -61,13 +68,13 @@ class WorkoutMenu:
     def select_workout(self, selected):
         # select workout from option menu and load it as current workout into list and user.curr_workout
         # when current workout is not started
-        if not self.user.curr_workout_started:
+        if not self.workout_processor.workout_started:
             self.select_work_str.set(selected)
             # if selected workout is found its content are written current workout list and user.curr_workout
-            if self.user.load_workout(selected):
+            if self.workout_processor.load_workout(self.user.get_workout(selected)):
                 self.curr_workout_list.delete(0, END)
                 # write workout break into variable
-                self.workout_break_sec_str.set(str(self.user.curr_workout.extra_break_sec))
+                self.workout_break_sec_str.set(str(self.workout_processor.current_workout.extra_break_sec))
                 if len(self.user.workouts) == 0:
                     return
                 for i, exe in enumerate(self.user.workouts[selected].exercises, 1):

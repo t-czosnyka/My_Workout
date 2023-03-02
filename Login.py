@@ -1,5 +1,6 @@
 from tkinter import *
-from DB import DB
+from Exercise import ExerciseProcessor
+from Workout import WorkoutProcessor
 from Gui import Gui
 from UserWindow import CreateUserWindow
 from tkinter import messagebox as mb
@@ -75,7 +76,9 @@ class Login:
             frame = Toplevel()
             # Hide login screen
             self.root.withdraw()
-            Gui(self.root, frame, user, self.DB)
+            exercise_processor = ExerciseProcessor()
+            workout_processor = WorkoutProcessor(exercise_processor, user)
+            Gui(self.root, frame, user, self.DB, exercise_processor, workout_processor)
         else:
             mb.showerror("User creation error", error)
 

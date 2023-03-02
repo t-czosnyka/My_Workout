@@ -6,11 +6,14 @@ from UserWindow import EditUserWindow
 from EditWorkoutWindow import EditWorkoutWindow
 from WorkoutMenu import WorkoutMenu
 from winsound import *
+from Exercise import Exercise, ExerciseProcessor
+from Workout import WorkoutProcessor
 
 
 class Gui:
 
-    def __init__(self, root, frame, user: User, DB):
+    def __init__(self, root, frame, user: User, DB, exercise_processor: ExerciseProcessor,
+                 workout_processor: WorkoutProcessor):
         self.DB = DB
         self.root = root
         self.frame = frame
@@ -20,6 +23,8 @@ class Gui:
         # when frame is closed - close hidden root
         self.frame.protocol("WM_DELETE_WINDOW", self.on_closing)
         self.user = user
+        self.exercise_processor = exercise_processor
+        self.workout_processor = workout_processor
 
         # Timer Variables
         self.curr_mode_str = StringVar()
@@ -156,7 +161,6 @@ class Gui:
 
         self.exercise_name.place(x=150, y=280)
 
-
         self.work_time_min = Entry(self.frame, validate="key", validatecommand=(reg, '%P'), width=5,
                                    textvariable=self.work_time_min_str)
         self.work_time_min.place(x=150, y=301)
@@ -212,7 +216,8 @@ class Gui:
         self.curr_workout_exe_list.place(x=300, y=279)
 
         # create option menu with user workouts
-        self.workout_menu = WorkoutMenu(self.user, self.frame, 298, 400, self.curr_workout_exe_list, True)
+        self.workout_menu = WorkoutMenu(self.user, self.frame, 298, 400, self.curr_workout_exe_list, True,
+                                        self.workout_processor)
 
         # create workout start button
         self.start_work_btn = Button(self.frame, text='Start Workout', width=14, command=self.start_workout)
@@ -234,38 +239,32 @@ class Gui:
     def continuous_update(self):
         # continuous update function runs every 0.1s to update GUI
         # run main User function to control exercises and workouts
-        self.user.main_run()
+        self.exercise_processor.main()
+        self.workout_processor.main()
         # update display based on user requests
         # exercise is finished -> adjust widgets, show message and reset request
-        if self.user.req_exercise_finish_to_gui:
+        if self.exercise_processor.exercise_finished and not self.workout_processor.workout_started:
             self.pause_exercise()
-            self.user.req_exercise_finish_to_gui_reset()
 
         # workout is finished -> adjust widgets, show message and reset request
-        if self.user.req_workout_finish_to_gui:
+        if self.workout_processor.workout_finished:
             self.pause_exercise()
             self.adjust_workout_widgets_started()
-            self.user.req_workout_finish_to_gui_reset()
 
         # next exercise request -> load current exercise data into widgets
-        if self.user.req_select_next_exe:
-            self.select_exercise(self.user.current_exercise.name)
-            self.start_exercise()
-            self.user.req_select_next_exe_reset()
-
-        # update current exercise name
-        if self.user.current_exercise.name != '':
-            self.current_exercise_text_str.set(self.user.current_exercise.name)
+        if self.workout_processor.gui_select_next_exe:
+            self.select_exercise(self.exercise_processor.current_exercise.name)
 
         # update timer values and colors
-        self.timer_value_str.set(self.user.my_timer.active_time_str)
-        self.total_time_passed_str.set(self.user.my_timer.total_time_passed_str)
-        self.work_time_passed_str.set(self.user.my_timer.work_time_passed_str)
-        self.break_time_passed_str.set(self.user.my_timer.break_time_passed_str)
-        self.round_num_int.set(self.user.curr_exe_round)
-        self.curr_mode_str.set(self.user.curr_exe_mode)
+        self.timer_value_str.set(self.exercise_processor.my_timer.active_time_str)
+        self.total_time_passed_str.set(self.exercise_processor.my_timer.total_time_passed_str)
+        self.work_time_passed_str.set(self.exercise_processor.my_timer.work_time_passed_str)
+        self.break_time_passed_str.set(self.exercise_processor.my_timer.break_time_passed_str)
+        self.round_num_int.set(self.exercise_processor.current_round)
+        self.curr_mode_str.set(self.exercise_processor.current_exercise_mode)
 
-        if self.user.curr_exe_mode == 'Delay' or self.user.curr_exe_mode == 'Break':
+        if self.exercise_processor.current_exercise_mode == 'Delay' or\
+                self.exercise_processor.current_exercise_mode == 'Break':
             self.mode_text.configure(fg="red")
             self.round_text.configure(fg="red")
             self.timer_text.configure(fg="red")
@@ -282,41 +281,54 @@ class Gui:
             self.workout_menu.update_menu()
             self.user.req_workout_update_reset()
 
-        # play sound if requested by user
-        if self.user.req_play_sound:
+        # play sound if requested by exercise processor
+        if self.exercise_processor.req_play_sound:
             PlaySound('bell.wav', SND_FILENAME | SND_ASYNC)
-            self.user.req_play_sound_reset()
 
+        # possible to start only if inputs are valid
+        if self.exercise_processor.current_exercise_valid:
+            self.start_btn.configure(state=NORMAL)
+        else:
+            self.start_btn.configure(state=DISABLED)
+
+        # possible to save exercise only if name is inserted
+        if self.exercise_name_str.get() != '':
+            self.save_exercise_btn.configure(state=NORMAL)
+        else:
+            self.save_exercise_btn.configure(state=DISABLED)
+
+        self.current_exercise_text_str.set(self.exercise_processor.current_exercise.name)
         # recall again every 0.1s
         self.frame.after(100, self.continuous_update)
 
     def start_exercise(self):
         # start current exercise, change start button to pause button
-        self.user.start_exercise()
+        self.exercise_processor.start_exercise()
         self.start_btn.configure(text="Pause", command=self.pause_exercise)
+
+    def pause_exercise(self):
+        # pause current exercise, change pause button to start button
+        self.exercise_processor.pause_exercise()
+        self.start_btn.configure(text="Start", command=self.start_exercise)
+
 
     def start_workout(self):
         # start workout button function
         # if workout is loaded correctly start timer
-        if self.user.start_workout():
+        if self.workout_processor.start_workout():
             self.start_exercise()
             # load current exercise from workout into entry widgets
-            self.select_exercise(self.user.current_exercise.name)
+            self.select_exercise(self.exercise_processor.current_exercise.name)
             # updated workout start button and disable workout widgets
             self.adjust_workout_widgets_not_started()
 
-    def pause_exercise(self):
-        # pause current exercise, change pause button to start button
-        self.user.pause_exercise()
-        self.start_btn.configure(text="Start", command=self.start_exercise)
 
     def general_reset(self):
         # reset exercise or workout
         self.pause_exercise()
-        self.user.reset_exercise()
-        self.user.reset_workout()
+        self.exercise_processor.reset_exercise()
+        self.workout_processor.reset_workout()
         # reload workout
-        self.workout_menu.select_workout(self.user.curr_workout.name)
         self.load_widget_values_to_current_exercise()
         # enable workout widgets
         self.adjust_workout_widgets_started()
@@ -332,27 +344,8 @@ class Gui:
 
     def load_widget_values_to_current_exercise(self, *args):
         # load values from entry widgets to current exercise
-        # when exercise or workout is not in progress
-        if not self.user.curr_exe_started and not self.user.curr_exe_finished and not self.user.curr_workout_started:
-            inputs = self.get_exercise_inputs()
-            self.user.current_exercise.name = inputs[0]
-            self.user.current_exercise.worktime_sec = inputs[1]
-            self.user.current_exercise.breaktime_sec = inputs[2]
-            self.user.current_exercise.num_rounds = inputs[3]
-            self.user.current_exercise.delay_sec = inputs[4]
-            self.current_exercise_text_str.set(self.user.current_exercise.name)
-        self.user.check_exe()
-        # possible to start only if inputs are valid
-        if self.user.curr_exe_valid:
-            self.start_btn.configure(state=NORMAL)
-        else:
-            self.start_btn.configure(state=DISABLED)
-
-        # possible to save exercise only if name is inserted
-        if self.exercise_name_str.get() != '':
-            self.save_exercise_btn.configure(state=NORMAL)
-        else:
-            self.save_exercise_btn.configure(state=DISABLED)
+        if not self.workout_processor.workout_started:
+            self.exercise_processor.load_exercise(Exercise(*self.get_exercise_inputs()))
 
     def update_exercise_menu(self):
         # delete than recreate option menu
@@ -404,7 +397,7 @@ class Gui:
     def save_exercise(self):
         # save button function
         # save entry widget values into Exercise object and database
-        if self.user.curr_workout_started:
+        if self.workout_processor.workout_started:
             mb.showerror('Error', 'Workout in progress.')
             return
         inputs = self.get_exercise_inputs()
@@ -425,7 +418,7 @@ class Gui:
     def delete_exercise(self):
         # delete currently selected exercise from user class and DB
         # cannot change exercises when workout in progress
-        if self.user.curr_workout_started:
+        if self.workout_processor.workout_started:
             mb.showerror('Error', 'Workout in progress.')
             return
 
@@ -477,7 +470,7 @@ class Gui:
         # Hide Gui and call edit workout window
         self.frame.withdraw()
         window = Toplevel()
-        EditWorkoutWindow(self.frame, window, self.DB, self.user, self.workout_menu.select_work_str.get())
+        EditWorkoutWindow(self.frame, window, self.DB, self.user, self.workout_menu.select_work_str.get(), self.workout_processor)
 
     def adjust_workout_widgets_started(self):
         # adjust workout widgets when workout is not started
@@ -499,7 +492,8 @@ class Gui:
 
     def skip_exercise(self):
         # finish current exercise during workout
-        self.user.skip_exercise()
+        self.start_exercise()
+        self.workout_processor.skip_exercise()
 
     def import_config(self):
         # import JSON file with User exercises and workouts

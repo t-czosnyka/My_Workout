@@ -6,7 +6,7 @@ from tkinter import messagebox as mb
 
 class EditWorkoutWindow:
 
-    def __init__(self, root, frame, DB, user, selected_workout_str: str):
+    def __init__(self, root, frame, DB, user, selected_workout_str: str, workout_processor):
         self.root = root  # gui window
         self.frame = frame
         self.DB = DB
@@ -18,6 +18,7 @@ class EditWorkoutWindow:
         self.frame.protocol("WM_DELETE_WINDOW", self.on_closing)
         self.dragged_exe = None
         self.allow_workout_list_selection = False
+        self.workout_processor = workout_processor
 
         # Define variables
         self.workout_name_str = StringVar()
@@ -41,7 +42,8 @@ class EditWorkoutWindow:
         self.curr_workout_list.place(x=10, y=60)
 
         # create option menu based on user workouts
-        self.workout_menu = WorkoutMenu(self.user, self.frame, 10, 183, self.curr_workout_list, False)
+        self.workout_menu = WorkoutMenu(self.user, self.frame, 10, 183, self.curr_workout_list, False,
+                                        self.workout_processor)
         # select previously selected workout after opening new window
         if selected_workout_str != '':
             self.workout_menu.select_workout(selected_workout_str)
