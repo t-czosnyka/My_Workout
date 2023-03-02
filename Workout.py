@@ -108,5 +108,3 @@ class WorkoutProcessor:
         if self.workout_started:
             self.skip = True
             self.exercise_processor.reset_exercise()
-
-

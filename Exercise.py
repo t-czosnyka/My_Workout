@@ -12,7 +12,8 @@ class Exercise:
         self.delay_sec = delay_sec
 
     def __str__(self):
-        return self.name + f" :worktime:{self.worktime_sec}, breaktime:{self.breaktime_sec}, rounds:{self.num_rounds}, " \
+        return self.name + f" :worktime:{self.worktime_sec}, breaktime:{self.breaktime_sec}, " \
+                           f"rounds:{self.num_rounds}, " \
                            f"delay:{self.delay_sec}"
 
 
@@ -130,12 +131,12 @@ class ExerciseProcessor:
         self.exercise_running = False
         self.my_timer.reset()
         self.exercise_started = False
-        #self.exercise_finished = False
 
     def check_exercise(self):
         # return true if exercise is valid: worktime > 0, number of rounds > 0 return
         if self.current_exercise.num_rounds > 0 and (self.current_exercise.worktime_sec > 0 or
-                                                     (self.current_exercise.breaktime_sec > 0 and self.current_exercise.num_rounds > 1)):
+                                                     (self.current_exercise.breaktime_sec > 0 and
+                                                      self.current_exercise.num_rounds > 1)):
             self.current_exercise_valid = True
         else:
             self.current_exercise_valid = False

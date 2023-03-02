@@ -1,6 +1,5 @@
 from tkinter import *
 from WorkoutMenu import WorkoutMenu
-import tkinter
 from tkinter import messagebox as mb
 
 
@@ -49,7 +48,8 @@ class EditWorkoutWindow:
             self.workout_menu.select_workout(selected_workout_str)
 
         # save workout button
-        self.save_workout_btn = Button(self.frame, text="Save Workout", command=self.save_workout, state=DISABLED, width=14)
+        self.save_workout_btn = Button(self.frame, text="Save Workout", command=self.save_workout, state=DISABLED,
+                                       width=14)
         self.save_workout_btn.place(x=12, y=242)
 
         # delete workout button
@@ -90,9 +90,10 @@ class EditWorkoutWindow:
         self.help_menu = Menu(self.menubar, tearoff=0)
         # Add command
         self.help_menu.add_command(label="Help", command=self.show_help)
-        # Add cascacde
+        # Add cascade
         self.menubar.add_cascade(label="Help", menu=self.help_menu)
-    def select_workout_name(self,*args):
+
+    def select_workout_name(self, *args):
         # if workout selected from menu write name into variable
         self.workout_name_str.set(self.workout_menu.select_work_str.get())
         self.validate_inputs()
@@ -101,7 +102,6 @@ class EditWorkoutWindow:
         # unhide gui window on closing
         self.frame.destroy()
         self.root.deiconify()
-
 
     def drag_exe(self, *args):
         # drag exercise from curr exe list
@@ -114,7 +114,6 @@ class EditWorkoutWindow:
         if args[0].y <= self.row_low_border_pos(self.curr_exe_list, index):
             self.dragged_exe = self.curr_exe_list.get(index)
             self.allow_workout_list_selection = False
-
 
     def release_exe(self, *args):
         # When mouse button is released check its position
@@ -170,12 +169,12 @@ class EditWorkoutWindow:
     def remove_exe(self, *args):
         # remove exercise from curr workout list by double click
         # remove the nearest row from cursor y position
-        # if double click below lowest row - dont remove
+        # if double click below lowest row - don't remove
         if self.curr_workout_list.size() == 0:
             return
         index = self.curr_workout_list.nearest(args[0].y)
         # compare cursor y position to border of the lowest row
-        if args[0].y > self.row_low_border_pos(self.curr_workout_list,index):
+        if args[0].y > self.row_low_border_pos(self.curr_workout_list, index):
             return
         self.curr_workout_list.delete(index)
         self.validate_inputs()
@@ -212,7 +211,7 @@ class EditWorkoutWindow:
         # Edit or create new workout in DB and user data
         if not self.validate_inputs():
             return
-        exercises = list(self.curr_workout_list.get(0,END))
+        exercises = list(self.curr_workout_list.get(0, END))
         # Call DB function to add workout
         res, error = self.DB.save_workout(self.user.name, self.workout_name_str.get(), exercises,
                                           self.user.get_str_var(self.workout_menu.workout_break_sec_str))
@@ -228,8 +227,6 @@ class EditWorkoutWindow:
         # Display message
         mb.showinfo('Success', 'Workout saved.')
 
-
-
     def delete_workout(self):
         workout_name = self.workout_name_str.get()
         if len(workout_name) == 0:
@@ -237,7 +234,7 @@ class EditWorkoutWindow:
             return
         # delete from DB
         res, error = self.DB.delete_workout(self.user.name, workout_name)
-        # check if deleted correctly if not return
+        # check if deleted correctly, if not return
         if not res:
             # Display message
             mb.showerror("Database Error.", error)
@@ -258,6 +255,3 @@ class EditWorkoutWindow:
                             "2. Double click exercise to remove it from workout list.\n"
                             "3. Workout name cannot be empty.\n"
                             "4. Extra break is added between exercises.")
-
-
-

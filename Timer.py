@@ -1,4 +1,3 @@
-import time
 from time import perf_counter
 
 
@@ -68,7 +67,7 @@ class Timer:
     @staticmethod
     def time_sec_to_clock_str(time_sec):
         # Convert time into string
-        # Divide into mins, sec, csec
+        # Divide into minutes, seconds, centiseconds
         mins = int(time_sec // 60)
         sec = int((time_sec - mins * 60) // 1)
         csec = int(round((time_sec - mins * 60 - sec) % 1, 2) * 100)
@@ -85,4 +84,3 @@ class Timer:
         self.work_time_passed_str = self.time_sec_to_clock_str(self.work_time_passed_sec)
         self.break_time_passed_str = self.time_sec_to_clock_str(self.break_time_passed_sec)
         self.total_time_passed_str = self.time_sec_to_clock_str(self.work_time_passed_sec+self.break_time_passed_sec)
-

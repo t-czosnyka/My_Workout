@@ -1,4 +1,3 @@
-# importing required libraries
 from tkinter import *
 from Login import Login
 from DB import DB
@@ -13,9 +12,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-
-
-
-
-
-

@@ -5,6 +5,7 @@ from Gui import Gui
 from UserWindow import CreateUserWindow
 from tkinter import messagebox as mb
 
+
 class Login:
     # class handles login screen and creates Gui and User objects on successful login
     def __init__(self, root, DB):
@@ -25,13 +26,13 @@ class Login:
         self.msg_str.set('')
 
         # create widgets
-        self.login_label = Label(self.root,text='Login:')
-        self.login_label.place(x=10,y=10)
-        self.password_label = Label(self.root,text='Password:')
+        self.login_label = Label(self.root, text='Login:')
+        self.login_label.place(x=10, y=10)
+        self.password_label = Label(self.root, text='Password:')
         self.password_label.place(x=10, y=30)
-        self.login = Entry(self.root,textvariable=self.login_str)
+        self.login = Entry(self.root, textvariable=self.login_str)
         self.login.place(x=90, y=10)
-        self.password = Entry(self.root,textvariable=self.password_str,show='*')
+        self.password = Entry(self.root, textvariable=self.password_str, show='*')
         self.password.place(x=90, y=30)
 
         # Login Button
@@ -87,13 +88,3 @@ class Login:
         self.root.withdraw()
         window = Toplevel()
         CreateUserWindow(self.root, window, self.DB)
-
-
-
-
-
-
-
-
-
-

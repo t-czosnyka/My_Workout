@@ -63,7 +63,7 @@ class UserWindow:
         self.help_menu = Menu(self.menubar, tearoff=0)
         # Add command
         self.help_menu.add_command(label="Help", command=self.show_help)
-        # add casacade to menubar
+        # add cascade to menubar
         self.menubar.add_cascade(label="Help", menu=self.help_menu)
 
     def on_closing(self):
@@ -141,9 +141,12 @@ class UserWindow:
     @staticmethod
     def show_help():
         # show help for this window
-        mb.showinfo("Help", "1. User name length: 4-40 characters. Must contain only alpha-numeric character + '-' and '_'.\n\n"
-                            "2. Email length: 4-40 characters. Must contain one '@'. Domain name must contain '.'. Cannot contain spaces.\n\n"
+        mb.showinfo("Help", "1. User name length: 4-40 characters. "
+                            "Must contain only alpha-numeric character + '-' and '_'.\n\n"
+                            "2. Email length: 4-40 characters. Must contain one '@'. "
+                            "Domain name must contain '.'. Cannot contain spaces.\n\n"
                             "3. Password length: 4-40 characters. Must contain one number, one letter and no spaces.")
+
 
 class CreateUserWindow(UserWindow):
     # Class creating window allowing to create new user before logging in
