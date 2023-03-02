@@ -1,10 +1,9 @@
-import copy
 from Exercise import Exercise, encode_exercise
 from Workout import Workout, encode_workout
 
 
 class User:
-    # User class stores and handles editing of user exercise and workout data
+    # User class stores and handles editing of user data
     def __init__(self, name: str, exercises: dict, workouts: dict, email: str,):
         self.name = name
         self.email = email
@@ -12,26 +11,6 @@ class User:
         self.workouts = workouts
         # Interface to Gui
         self.req_workout_update = False
-
-    # def main_run(self):
-    #     # main user function evaluate signals from exercise/workout and communicate with gui
-    #     # run exercise and workout functions
-    #     self.exercise_processor.main()
-    #     self.run_workout()
-    #     # evaluate outputs of these functions
-    #     if self.exercise_processor.exercise_finished:
-    #         self.exercise_processor.reset_exercise()
-    #         # exercise finished in single exercise mode
-    #         if not self.curr_workout_started:
-    #             self.req_exercise_finish_to_gui = True
-    #             self.exercise_processor.update_display()
-    #         # exercise finished in workout mode -> start next exercise
-    #         elif not self.curr_workout_finished:
-    #             self.req_select_next_exe = True
-    #         # workout finished
-    #         else:
-    #             self.req_workout_finish_to_gui = True
-    #             self.reset_workout()
 
     def save_exercise(self, inputs: list):
         # Create or update exercise object based on input from Gui
@@ -66,23 +45,27 @@ class User:
                     workout.exercises[i] = (workout.exercises[i][0], workout.exercises[i][1]-shift)
                 i += 1
 
-    def change_data(self, data):
+    def update_user_data(self, data):
+        # update user data if changed
         self.email = data[0]
 
     def save_workout(self, workout_name: str, exercises: list, extra_break_sec: int):
+        # save workout with given data into user data
+        # workout name cannot be empty
         if workout_name == '':
             return
         # check if workout already exists
         if workout_name in self.workouts:
-            # update exisitng workout
+            # update existing workout
             self.workouts[workout_name].extra_break_sec = extra_break_sec
+            # clear current exercise list
+            self.workouts[workout_name].exercises.clear()
         else:
-            #create new workout
-            self.workouts[workout_name] = Workout(workout_name,[],extra_break_sec)
-        # update exercise list
-        self.workouts[workout_name].exercises.clear()
+            # create new workout
+            self.workouts[workout_name] = Workout(workout_name, [], extra_break_sec)
+        # add exercises as tuples with (name, order number)
         for i, exe_name in enumerate(exercises, 1):
-            self.workouts[workout_name].exercises.append((exe_name,i))
+            self.workouts[workout_name].exercises.append((exe_name, i))
 
     def delete_workout(self, workout_name):
         # Delete workout with given name if present
@@ -123,7 +106,7 @@ class User:
 
     @staticmethod
     def get_str_var(str_var):
-        # return int of stringvar or 0 if empty
+        # return int of string_var or 0 if empty
         if str_var.get() != '':
             return int(str_var.get())
         else:
@@ -148,28 +131,3 @@ class User:
 
     def req_workout_update_reset(self):
         self.req_workout_update = False
-
-    def req_select_next_exe_reset(self):
-        self.req_select_next_exe = False
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

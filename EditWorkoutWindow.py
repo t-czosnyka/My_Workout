@@ -208,7 +208,6 @@ class EditWorkoutWindow:
             self.save_workout_btn.configure(state=DISABLED)
             return False
 
-
     def save_workout(self):
         # Edit or create new workout in DB and user data
         if not self.validate_inputs():

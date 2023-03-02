@@ -209,6 +209,6 @@ class EditUserWindow(UserWindow):
             mb.showinfo('Success', 'Data successfully edited.')
             self.frame.destroy()
             self.root.deiconify()
-            user.change_data([self.email_str.get()])
+            user.update_user_data([self.email_str.get()])
         else:
             mb.showerror('Error', error)
