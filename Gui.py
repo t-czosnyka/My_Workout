@@ -342,12 +342,14 @@ class Gui:
         self.workout_processor.reset_workout()
         # enable workout widgets
         self.adjust_workout_widgets_not_started()
+        self.load_widget_values_to_current_exercise()
 
     def get_exercise_inputs(self):
         # get inputs from exercise entry widgets
         name = self.exercise_name_str.get()
         work_time = self.user.get_str_var(self.work_time_min_str) * 60 + self.user.get_str_var(self.work_time_sec_str)
-        break_time = self.user.get_str_var(self.break_time_min_str) * 60 + self.user.get_str_var(self.break_time_sec_str)
+        break_time = self.user.get_str_var(self.break_time_min_str) * 60 \
+            + self.user.get_str_var(self.break_time_sec_str)
         num_rounds = self.user.get_str_var(self.num_rounds_str)
         delay = self.user.get_str_var(self.delay_time_sec_str)
         return [name, work_time, break_time, num_rounds, delay]
@@ -575,7 +577,8 @@ class Gui:
         mb.showinfo("Help",
                     "1. Exercises consist of work time and break time for set number of rounds. "
                     "Delay before starting first round can also be set.\n\n"
-                    "2. To start the exercise its number of rounds and worktime or breaktime must be greater than zero.\n\n"
+                    "2. To start the exercise its number of rounds and worktime or breaktime must"
+                    " be greater than zero.\n\n"
                     "3. Exercise can be saved when its name its not empty.\n\n"
                     "4. Workout is a sequence of exercises that are automatically started. "
                     "Additional break between exercises can be inserted as an option in workout.\n\n"

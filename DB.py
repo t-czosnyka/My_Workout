@@ -39,6 +39,7 @@ class DB:
 
         mycursor = my_db.cursor()
         # Create users table if it doesn't exist
+        # Users table contain user data and login data, stored as password hash + salt
         sql = "CREATE TABLE IF NOT EXISTS users (user_id INT AUTO_INCREMENT PRIMARY KEY,\
                                name VARCHAR(40), email VARCHAR(40), password_hash VARCHAR(64), salt VARCHAR(64),\
                              UNIQUE(name))"
@@ -48,6 +49,7 @@ class DB:
             return
 
         # Create exercises table if it doesn't exist
+        # Exercise table contains exercises data with reference to user_id who owns given exercise
         sql = "CREATE TABLE IF NOT EXISTS exercises (exe_id INT AUTO_INCREMENT PRIMARY KEY, user_id INT,\
                               name VARCHAR(40), time_work INT, time_rest INT, num_rounds INT, delay INT,\
                               UNIQUE(user_id,name), FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE)"
@@ -57,6 +59,8 @@ class DB:
             return
 
         # Create work_users table if it doesn't exist
+        # Work users table contains workouts of every user, each workout references user_id of its owner
+        # Workout data contains a name and length of extra break between exercises
         sql = "CREATE TABLE IF NOT EXISTS work_users (work_id INT AUTO_INCREMENT PRIMARY KEY, user_id INT,\
                               name  VARCHAR(40), extra_break_sec INT DEFAULT 0, UNIQUE(user_id,name),\
                               FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE)"
@@ -66,6 +70,9 @@ class DB:
             return
 
         # Create work_exes table if it doesn't exist
+        # each row in work_exes table represents an exercise that is part of a workout
+        # it references workout that its part of from work_users table, type of exercise from exercise table
+        # and ordinal number in each workout
         sql = "CREATE TABLE IF NOT EXISTS work_exes (work_id INT, exe_id INT, order_num INT, \
                              UNIQUE(work_id, order_num),\
                              FOREIGN KEY (work_id) REFERENCES work_users(work_id) ON DELETE CASCADE,\
@@ -171,21 +178,22 @@ class DB:
             # get saved password hash and salt from DB
             sql = f"SELECT password_hash, salt FROM users WHERE name = '{in_login}'"
             result, error = self.execute_sql(sql, mycursor, my_db, False)
-            if result:
-                user_pass = mycursor.fetchall()
-                saved_password_hash = user_pass[0][0]
-                salt = user_pass[0][1]
-                # generate hash of inserted salt + inserted password
-                input_password_hash = self.generate_hash_password_with_salt(in_password, salt)
-                # compare saved password hash with hash generated with input password
-                if saved_password_hash == input_password_hash:
-                    valid = True
-                    # log information on successful log in
-                    logger.info(f"User {in_login} logged in.")
-                else:
-                    # log warning on unsuccessful log in
-                    logger.warning(f"Wrong password for user {in_login}.")
-                    error = "Wrong password."
+        if result:
+            user_pass = mycursor.fetchall()
+            saved_password_hash = user_pass[0][0]
+            salt = user_pass[0][1]
+            # generate hash of salt from DB + inserted password
+            input_password_hash = self.generate_hash_password_with_salt(in_password, salt)
+            # compare saved password hash with hash generated with input password
+            if saved_password_hash == input_password_hash:
+                valid = True
+                # log information on successful log in
+                logger.info(f"User {in_login} logged in.")
+            else:
+                # log warning on unsuccessful log in
+                logger.warning(f"Wrong password for user {in_login}.")
+                error = "Wrong password."
+        # Close db connection
         my_db.close()
         return valid, error
 
@@ -208,7 +216,7 @@ class DB:
         return user, ''
 
     def get_exercises(self, user_name):
-        # Get exercises data from DB for user
+        # Get exercises data from DB for given user, return dict of exercises
         exercises = {}
         result = False
         # Connect to DB, if connection fails, return empty dict
@@ -271,12 +279,10 @@ class DB:
             # create workout objects
             for w in workout_data:
                 workout_name, exercise_name, exercise_order_num, extra_break_sec = w[0], w[1], w[2], w[3]
-                # # if workout exists add data
-                # if workout_name in workouts:
-                #     workouts[workout_name].extra_break_sec = extra_break_sec
-                # # if workout doesn't exist create new workout object
+                # if workout doesn't exist create new workout object
                 if workout_name not in workouts:
                     workouts[workout_name] = Workout(workout_name, [], extra_break_sec)
+                # add exercise to workout
                 # check if current exercise order number is bigger then exercises list length
                 len_difference = exercise_order_num - len(workouts[workout_name].exercises)
                 if len_difference > 0:
@@ -297,6 +303,7 @@ class DB:
             return result, error_msg
         # If connection is successful execute statement
         mycursor = my_db.cursor()
+        # Insert exercise data into exercises table
         sql = f"INSERT INTO exercises (user_id, name,time_work,time_rest,num_rounds,delay) \
                              VALUES((SELECT user_id FROM users WHERE name='{user_name}'),\
                              '{exe_name}',{worktime_sec},{breaktime_sec},{num_rounds},{delay_sec})\
