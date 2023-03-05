@@ -149,31 +149,25 @@ class DB:
     def validate_user(self, in_login, in_password):
         # validate login and password, return True if login and password hash match database
         valid = False
-        login_found = False
         # Connect to DB, if connection fails, return False
         my_db, error = self.connect_to_DB()
         if not my_db:
             return valid, error
         mycursor = my_db.cursor()
-        # get logins from DB
-        sql = "SELECT name FROM users"
+        # look for inserted login in user table
+        sql = f"SELECT name FROM users WHERE name = '{in_login}'"
         result, error = self.execute_sql(sql, mycursor, my_db, False)
         if result:
-            logins = mycursor.fetchall()
-            # compare logins with inserted login
-            for login in logins:
-                if login[0] == in_login:
-                    login_found = True
-                    break
-            # return error if login is not found
-            if not login_found:
+            login = mycursor.fetchall()
+            if not(len(login) == 1 and login[0][0] == in_login):
+                # login was not found, log warning and return error
                 # log warning
                 logger.warning(f"User {in_login} not found.")
                 return valid, f"User {in_login} not found."
-            # compare password if login is found
-            # get saved password hash and salt from DB
-            sql = f"SELECT password_hash, salt FROM users WHERE name = '{in_login}'"
-            result, error = self.execute_sql(sql, mycursor, my_db, False)
+        # compare password if login is found
+        # get saved password hash and salt from DB
+        sql = f"SELECT password_hash, salt FROM users WHERE name = '{in_login}'"
+        result, error = self.execute_sql(sql, mycursor, my_db, False)
         if result:
             user_pass = mycursor.fetchall()
             saved_password_hash = user_pass[0][0]
