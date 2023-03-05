@@ -25,7 +25,7 @@ class WorkoutMenu:
         self.workout_break_sec_label.place(x=pos_x, y=pos_y)
 
         # validating function for extra break time input
-        val = self.frame.register(lambda x: self.user.validate_time_input(x, 3))
+        val = self.frame.register(lambda x: self.user.validate_number_input(x, 3))
 
         self.workout_break_sec = Entry(self.frame, textvariable=self.workout_break_sec_str, width=4, validate='key',
                                        validatecommand=(val, '%P'))

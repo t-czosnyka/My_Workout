@@ -153,35 +153,36 @@ class Gui:
         self.delay_time_label.place(x=20, y=366)
 
         # validating functions for exercise entry widgets
-        reg = self.frame.register(lambda x: self.user.validate_time_input(x, 2))
-        reg2 = self.frame.register(self.user.validate_name_input)
+        validate_number = self.frame.register(lambda x: self.user.validate_number_input(x, 2))
+        validate_time_sec = self.frame.register(self.user.validate_time_input_sec)
+        validate_name = self.frame.register(self.user.validate_name_input)
 
-        self.exercise_name = Entry(self.frame, width=15, validate="key", validatecommand=(reg2, '%P'),
+        self.exercise_name = Entry(self.frame, width=15, validate="key", validatecommand=(validate_name, '%P'),
                                    textvariable=self.exercise_name_str)
 
         self.exercise_name.place(x=150, y=280)
 
-        self.work_time_min = Entry(self.frame, validate="key", validatecommand=(reg, '%P'), width=5,
+        self.work_time_min = Entry(self.frame, validate="key", validatecommand=(validate_number, '%P'), width=5,
                                    textvariable=self.work_time_min_str)
         self.work_time_min.place(x=150, y=301)
 
-        self.work_time_sec = Entry(self.frame, validate="key", validatecommand=(reg, '%P'), width=5,
+        self.work_time_sec = Entry(self.frame, validate="key", validatecommand=(validate_time_sec, '%P'), width=5,
                                    textvariable=self.work_time_sec_str)
         self.work_time_sec.place(x=210, y=301)
 
-        self.break_time_min = Entry(self.frame, validate="key", validatecommand=(reg, '%P'), width=5,
+        self.break_time_min = Entry(self.frame, validate="key", validatecommand=(validate_number, '%P'), width=5,
                                     textvariable=self.break_time_min_str)
         self.break_time_min.place(x=150, y=323)
 
-        self.break_time_sec = Entry(self.frame, validate="key", validatecommand=(reg, '%P'), width=5,
+        self.break_time_sec = Entry(self.frame, validate="key", validatecommand=(validate_time_sec, '%P'), width=5,
                                     textvariable=self.break_time_sec_str)
         self.break_time_sec.place(x=210, y=323)
 
-        self.num_rounds = Entry(self.frame, validate="key", validatecommand=(reg, '%P'), width=5,
+        self.num_rounds = Entry(self.frame, validate="key", validatecommand=(validate_number, '%P'), width=5,
                                 textvariable=self.num_rounds_str)
         self.num_rounds.place(x=150, y=345)
 
-        self.delay_time_sec = Entry(self.frame, validate="key", validatecommand=(reg, '%P'), width=5,
+        self.delay_time_sec = Entry(self.frame, validate="key", validatecommand=(validate_number, '%P'), width=5,
                                     textvariable=self.delay_time_sec_str)
         self.delay_time_sec.place(x=150, y=367)
 

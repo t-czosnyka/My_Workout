@@ -90,8 +90,19 @@ class User:
 
     @staticmethod
     # validating function for time value entry widgets, check if input is digit or is empty, less character than max
-    def validate_time_input(entry_input, max_num_char):
+    def validate_number_input(entry_input, max_num_char):
         if (entry_input.isdigit() or entry_input == '') and len(entry_input) <= max_num_char:
+            return True
+        else:
+            return False
+
+    @staticmethod
+    # validating function for time in value seconds entry widgets, check if input is digit or is empty,
+    # value is less than 60
+    def validate_time_input_sec(entry_input):
+        if entry_input == '':
+            return True
+        elif entry_input.isdigit() and len(entry_input) <= 2 and int(entry_input) < 60:
             return True
         else:
             return False
