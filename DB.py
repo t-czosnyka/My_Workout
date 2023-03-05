@@ -391,6 +391,17 @@ class DB:
                 result = False
                 error = 'User not found.'
                 logger.warning(f"User {user_name} not found for edit.")
+        if result:
+            # check if inserted email address is not used by other user
+            sql = f"SELECT name, email FROM users WHERE email = '{email}' AND name != '{user_name}'"
+            result, error = self.execute_sql(sql, mycursor, my_db, False)
+        if result:
+            email = mycursor.fetchall()
+            # return error if this email already exists in database
+            if len(email) > 0:
+                result = False
+                error = 'Email already taken.'
+                logger.warning(f"User {user_name} tried using existing email address")
         # if user is found generate password hash and salt for new password
         if result:
             password_hash, salt = self.generate_new_hash_password(password)
