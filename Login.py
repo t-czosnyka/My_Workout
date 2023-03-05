@@ -63,10 +63,8 @@ class Login:
             self.login_str.set('')
             self.password_str.set('')
             self.log_on(login)
-            self.msg_str.set('')
         else:
             self.password_str.set('')
-            self.msg_str.set(error)
             mb.showerror("Login error", error)
 
     def log_on(self, login):
