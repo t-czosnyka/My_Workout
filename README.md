@@ -1,3 +1,4 @@
+<h1>My_Workout</h1>
 Welcome to My_Workout - home training timer application.
 
 - MySQL database hosted on https://freedb.tech/,
@@ -11,7 +12,6 @@ It is an interval timer application that lets you track your work and break time
 Exercises can be grouped in Workouts and performed in a sequence. For example boxing workout: warmup 10 x 1min -> shadow boxing 3x 3min/1min -> stretching 10 x 45s. Additional breaks can be added between exercises.
 
 
-
 Features:
 - Multiple users and accounts,
 - Custom workouts and exercises,
@@ -20,7 +20,7 @@ Features:
 - Logging errors and information,
 - Safely stored passwords.
 
-Screenshots:
+<h2>Screenshots:</h2>
 
 Main window:
 
