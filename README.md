@@ -1,5 +1,5 @@
 <h1>My_Workout</h1>
-Welcome to My_Workout - home training timer application.
+Welcome to My_Workout - home exercise timer application.
 
 - MySQL database hosted on https://freedb.tech/,
 - mysql.connector used for communication with SQL server,
