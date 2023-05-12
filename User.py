@@ -29,21 +29,23 @@ class User:
             self.exercises.pop(exe_name)
         else:
             return
+        # keep track of altered workouts to be saved to DB
+        changed_workouts = set()
         # Delete exercise from user workouts and adjust order numbers
         for workout in self.workouts.values():
-            shift = 0
             i = 0
             while i < len(workout.exercises):
                 # delete exercise if found in workout,
-                # increment shift variable to subtract from other exercises order num
-                if workout.exercises[i][0] == exe_name:
+                if workout.exercises[i] == exe_name:
                     workout.exercises.pop(i)
-                    shift += 1
+                    changed_workouts.add(workout)
+                    # shift += 1
                     continue
                 # adjust order number for other exercises if some exercises were already deleted
-                elif shift > 0:
-                    workout.exercises[i] = (workout.exercises[i][0], workout.exercises[i][1]-shift)
+                # elif shift > 0:
+                #     workout.exercises[i] = (workout.exercises[i][0], workout.exercises[i][1]-shift)
                 i += 1
+        return changed_workouts
 
     def update_user_data(self, data):
         # update user data if changed

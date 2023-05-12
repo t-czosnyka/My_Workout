@@ -450,7 +450,13 @@ class Gui:
         # delete current name from select menu
         self.select_exe_str.set('')
         # delete current name form user exercises
-        self.user.delete_exercise(exe_name)
+        changed_workouts = self.user.delete_exercise(exe_name)
+        # update workouts with deleted exercise in DB
+        for workout in changed_workouts:
+            res, error = self.DB.save_workout(self.user.name, workout.name, workout.exercises, workout.extra_break_sec)
+            if not res:
+                # Display message
+                mb.showerror("Database Error.", error)
         self.update_exercise_menu()
         # update currently selected workout exercises list
         self.workout_menu.select_workout(self.workout_menu.select_work_str.get())
