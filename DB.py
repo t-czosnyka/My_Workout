@@ -72,12 +72,11 @@ class DB:
         # Create work_exes table if it doesn't exist
         # each row in work_exes table represents an exercise that is part of a workout
         # it references workout that its part of from work_users table, type of exercise from exercise table
-        # and ordinal number in each workout
-        sql = "CREATE TABLE IF NOT EXISTS work_exes (work_id INT, exe_id INT, order_num INT, \
-                             UNIQUE(work_id, order_num),\
+        # and ordinal number in each workout, Work_id and order number are primary key
+        sql = "CREATE TABLE IF NOT EXISTS work_exes (work_id INT, exe_id INT NOT NULL, order_num INT, \
                              FOREIGN KEY (work_id) REFERENCES work_users(work_id) ON DELETE CASCADE,\
                              FOREIGN KEY (exe_id) REFERENCES exercises(exe_id) ON DELETE CASCADE,\
-                             PRIMARY KEY(work_id, exe_id, order_num))"
+                             PRIMARY KEY(work_id, order_num))"
         result, self.error_msg = self.execute_sql(sql, mycursor, my_db, True)
         if not result:
             self.error = True
@@ -103,12 +102,18 @@ class DB:
     def connect_to_DB(self):
         # connecting to remote database, return connection object if successful, return None if error occurred
         try:
+            # my_db = mysql.connector.connect(
+            #     host="sql.freedb.tech",
+            #     user="freedb_my_workout_user",
+            #     passwd="Ne8KzVs&2MFsC?r",
+            #     database="freedb_my_workout_db",
+            #     port=3306
+            # )
             my_db = mysql.connector.connect(
-                host="sql.freedb.tech",
-                user="freedb_my_workout_user",
-                passwd="Ne8KzVs&2MFsC?r",
-                database="freedb_my_workout_db",
-                port=3306
+                host="localhost",
+                user="root",
+                passwd="Batman123",
+                database="my_workout_db"
             )
         except mysql.connector.Error as err:
             self.error = True
