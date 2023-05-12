@@ -20,6 +20,9 @@ Features:
 - Logging errors and information,
 - Safely stored passwords.
 
+<h2>Database schema:</h2>
+<img src="https://github.com/t-czosnyka/My_Workout/assets/115980948/ca5d1bff-9440-407a-8dd2-3e142b0a9bb5" style="height:400px">
+
 <h2>Screenshots:</h2>
 
 Main window:
