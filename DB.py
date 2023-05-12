@@ -40,9 +40,13 @@ class DB:
         mycursor = my_db.cursor()
         # Create users table if it doesn't exist
         # Users table contain user data and login data, stored as password hash + salt
-        sql = "CREATE TABLE IF NOT EXISTS users (user_id INT AUTO_INCREMENT PRIMARY KEY,\
-                               name VARCHAR(40), email VARCHAR(40), password_hash VARCHAR(64), salt VARCHAR(64),\
-                             UNIQUE(name))"
+        sql = "CREATE TABLE IF NOT EXISTS users (\
+                                user_id INT AUTO_INCREMENT PRIMARY KEY,\
+                                name VARCHAR(40) NOT NULL,\
+                                email VARCHAR(40) NOT NULL,\
+                                password_hash VARCHAR(64) NOT NULL,\
+                                salt VARCHAR(64) NOT NULL,\
+                                UNIQUE(name))"
         result, self.error_msg = self.execute_sql(sql, mycursor, my_db, True)
         if not result:
             self.error = True
@@ -50,9 +54,16 @@ class DB:
 
         # Create exercises table if it doesn't exist
         # Exercise table contains exercises data with reference to user_id who owns given exercise
-        sql = "CREATE TABLE IF NOT EXISTS exercises (exe_id INT AUTO_INCREMENT PRIMARY KEY, user_id INT,\
-                              name VARCHAR(40), time_work INT, time_rest INT, num_rounds INT, delay INT,\
-                              UNIQUE(user_id,name), FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE)"
+        sql = "CREATE TABLE IF NOT EXISTS exercises (\
+                                exe_id INT AUTO_INCREMENT PRIMARY KEY,\
+                                user_id INT NOT NULL,\
+                                name VARCHAR(40) NOT NULL,\
+                                time_work INT NOT NULL,\
+                                time_rest INT NOT NULL,\
+                                num_rounds INT NOT NULL,\
+                                delay INT NOT NULL,\
+                                UNIQUE(user_id,name),\
+                                FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE)"
         result, self.error_msg = self.execute_sql(sql, mycursor, my_db, True)
         if not result:
             self.error = True
@@ -61,9 +72,13 @@ class DB:
         # Create work_users table if it doesn't exist
         # Work users table contains workouts of every user, each workout references user_id of its owner
         # Workout data contains a name and length of extra break between exercises
-        sql = "CREATE TABLE IF NOT EXISTS work_users (work_id INT AUTO_INCREMENT PRIMARY KEY, user_id INT,\
-                              name  VARCHAR(40), extra_break_sec INT DEFAULT 0, UNIQUE(user_id,name),\
-                              FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE)"
+        sql = "CREATE TABLE IF NOT EXISTS work_users (\
+                                work_id INT AUTO_INCREMENT PRIMARY KEY,\
+                                user_id INT NOT NULL,\
+                                name  VARCHAR(40) NOT NULL,\
+                                extra_break_sec INT DEFAULT 0,\
+                                UNIQUE(user_id,name),\
+                                FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE)"
         result, self.error_msg = self.execute_sql(sql, mycursor, my_db, True)
         if not result:
             self.error = True
@@ -73,10 +88,13 @@ class DB:
         # each row in work_exes table represents an exercise that is part of a workout
         # it references workout that its part of from work_users table, type of exercise from exercise table
         # and ordinal number in each workout, Work_id and order number are primary key
-        sql = "CREATE TABLE IF NOT EXISTS work_exes (work_id INT, exe_id INT NOT NULL, order_num INT, \
-                             FOREIGN KEY (work_id) REFERENCES work_users(work_id) ON DELETE CASCADE,\
-                             FOREIGN KEY (exe_id) REFERENCES exercises(exe_id) ON DELETE CASCADE,\
-                             PRIMARY KEY(work_id, order_num))"
+        sql = "CREATE TABLE IF NOT EXISTS work_exes (\
+                                work_id INT,\
+                                exe_id INT NOT NULL,\
+                                order_num INT, \
+                                FOREIGN KEY (work_id) REFERENCES work_users(work_id) ON DELETE CASCADE,\
+                                FOREIGN KEY (exe_id) REFERENCES exercises(exe_id) ON DELETE CASCADE,\
+                                PRIMARY KEY(work_id, order_num))"
         result, self.error_msg = self.execute_sql(sql, mycursor, my_db, True)
         if not result:
             self.error = True
