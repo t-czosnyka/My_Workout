@@ -120,19 +120,19 @@ class DB:
     def connect_to_DB(self):
         # connecting to remote database, return connection object if successful, return None if error occurred
         try:
-            # my_db = mysql.connector.connect(
-            #     host="sql.freedb.tech",
-            #     user="freedb_my_workout_user",
-            #     passwd="Ne8KzVs&2MFsC?r",
-            #     database="freedb_my_workout_db",
-            #     port=3306
-            # )
             my_db = mysql.connector.connect(
-                host="localhost",
-                user="root",
-                passwd="Batman123",
-                database="my_workout_db"
+                host="sql.freedb.tech",
+                user="freedb_my_workout_user",
+                passwd="Ne8KzVs&2MFsC?r",
+                database="freedb_my_workout_db",
+                port=3306
             )
+            # my_db = mysql.connector.connect(
+            #     host="localhost",
+            #     user="root",
+            #     passwd="",
+            #     database="my_workout_db"
+            # )
         except mysql.connector.Error as err:
             self.error = True
             self.error_msg = "DB Connection error: " + err.msg
