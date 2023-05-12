@@ -265,8 +265,8 @@ class DB:
         mycursor = my_db.cursor()
         sql = f"SELECT work_users.name, exercises.name, work_exes.order_num, work_users.extra_break_sec \
             FROM work_users \
-            INNER JOIN work_exes ON work_users.work_id = work_exes.work_id \
-            INNER JOIN exercises ON work_exes.exe_id = exercises.exe_id \
+            LEFT JOIN work_exes ON work_users.work_id = work_exes.work_id \
+            LEFT JOIN exercises ON work_exes.exe_id = exercises.exe_id \
             WHERE work_users.user_id =(SELECT user_id FROM users WHERE name = '{user_name}');"
         result, error = self.execute_sql(sql, mycursor, my_db, False)
         if result:
@@ -278,13 +278,14 @@ class DB:
                 if workout_name not in workouts:
                     workouts[workout_name] = Workout(workout_name, [], extra_break_sec)
                 # add exercise to workout
-                # check if current exercise order number is bigger then exercises list length
-                len_difference = exercise_order_num - len(workouts[workout_name].exercises)
-                if len_difference > 0:
-                    # extend the list
-                    workouts[workout_name].exercises.extend(['']*len_difference)
-                # write exercise name in place by its order number
-                workouts[workout_name].exercises[exercise_order_num-1] = exercise_name
+                if exercise_name is not None and exercise_order_num is not None:
+                    # check if current exercise order number is bigger then exercises list length
+                    len_difference = exercise_order_num - len(workouts[workout_name].exercises)
+                    if len_difference > 0:
+                        # extend the list
+                        workouts[workout_name].exercises.extend(['']*len_difference)
+                    # write exercise name in place by its order number
+                    workouts[workout_name].exercises[exercise_order_num-1] = exercise_name
         # Close DB connection
         my_db.close()
         return result, workouts, error
